@@ -595,7 +595,7 @@ function updateSpeedIndicator(speedLimit, currentSpeed) {
 }
 
 function updateDisplayForSpecialTransport(specialTransport) {
-	if (specialTransport) {
+	if (!specialTransport) {
 		$('.dashboard').find('aside').removeClass('special-transport').end()
 			.find('nav').removeClass('special-transport');
 	} else {
