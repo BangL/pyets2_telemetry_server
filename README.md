@@ -1,5 +1,8 @@
 # pyets2_telemetry_server
 
+forked and somewhat updated version of:
+https://github.com/thomasa88/pyets2_telemetry_server
+
 ## Introduction
 
 pyets2_telemetry_server provides a web dashboard for ETS2 ([Euro Truck Simulator 2](https://eurotrucksimulator2.com/)) in **Linux**, allowing the dashboard to be shown on a separate screen or phone/tablet.
@@ -60,7 +63,7 @@ pyets2_telemetry_server is used as follows:
 
 ## Compatibility
 
-pyets2_telemetry_server has been tested with Euro Truck Simulator 2 version 1.35 on Ubuntu 18.04, with Python 3.6.
+pyets2_telemetry_server has been tested with Euro Truck Simulator 2 version 1.50 on Arch, with Python 3.12.3.
 
 ## Performance
 
