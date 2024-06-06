@@ -209,7 +209,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.render = function (data) {
     updateSpeedIndicator(data.navigation.speedLimit, data.truck.speed);
 	
 	// Update UI if in special transport mission
-	updateDisplayForSpecialTransport(data.cargo.cargoId);
+	updateDisplayForSpecialTransport(data.job.specialTransport);
 
     return data;
 }
@@ -594,10 +594,8 @@ function updateSpeedIndicator(speedLimit, currentSpeed) {
     $('.dashboard').find('aside').find('div._speed').css('background', style);
 }
 
-function updateDisplayForSpecialTransport(trailerId) {
-	var specialTransportCargos = ['boiler_parts', 'cat_785c', 'condensator', 'ex_bucket', 'heat_exch', 'lattice', 'm_59_80_r63', 'mystery_box', 'mystery_cyl', 'pilot_boat', 'silo'];
-	
-	if (specialTransportCargos.indexOf(trailerId) === -1) {
+function updateDisplayForSpecialTransport(specialTransport) {
+	if (specialTransport) {
 		$('.dashboard').find('aside').removeClass('special-transport').end()
 			.find('nav').removeClass('special-transport');
 	} else {
