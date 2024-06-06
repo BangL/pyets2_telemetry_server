@@ -31,7 +31,8 @@ import posixpath
 import socket
 import socketserver
 import threading
-import urllib
+from typing import Any
+import urllib.parse
 
 import pyets2lib.scshelpers
 
@@ -54,10 +55,10 @@ negotiate_base = {
 }
 
 connect_json = json.dumps({
-        'C': 's-0,2CDDE7A|1,23ADE88|2,297B01B|3,3997404|4,33239B5',
-        'S': 1,
-        'M': []
-    })
+    'C': 's-0,2CDDE7A|1,23ADE88|2,297B01B|3,3997404|4,33239B5',
+    'S': 1,
+    'M': []
+})
 
 # Correct?
 reconnect_json = json.dumps({})
@@ -72,7 +73,7 @@ pong_json = json.dumps({ 'Response': 'pong' })
 
 class SignalrHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, logger, shared_data, stop_event,
-                 request, client_address, server):
+                request, client_address, server):
         self.logger_ = logger
         self.shared_data_ = shared_data
         self.stop_event_ = stop_event
@@ -125,7 +126,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
             super().handle_one_request()
         else:
             self.close_connection = True
-            
+
     def do_GET(self):
         if not self.do_signalr():
             super().do_GET()
@@ -156,7 +157,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
             processed = False
         elif self.path.startswith('/signalr/negotiate'):
             self.read_data()
-            token = self.server.add_client()
+            token = self.server.add_client() # type: ignore
             negotiate = negotiate_base.copy()
             negotiate['ConnectionToken'] = token
             self.write_response(json.dumps(negotiate))
@@ -173,7 +174,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
             self.read_data()
             query = self.parse_query()
             token = query['connectionToken'][0]
-            self.server.test_and_set_client_new(token, True)
+            self.server.test_and_set_client_new(token, True) # type: ignore
             self.write_response(reconnect_json)
         elif self.path.startswith('/signalr/ping'):
             self.read_data()
@@ -182,17 +183,17 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
             self.read_data()
             query = self.parse_query()
             token = query['connectionToken'][0]
-            self.server.remove_client(token)
+            self.server.remove_client(token) # type: ignore
             self.write_response('')
         elif self.path.startswith('/signalr/poll'):
-            data = self.read_data()
+            data: str = str(self.read_data())
             post_data = urllib.parse.parse_qs(data)
             messageId = post_data['messageId'][0]
 
             query = self.parse_query()
             token = query['connectionToken'][0]
-            new_client = self.server.test_and_set_client_new(token, False)
-            
+            new_client = self.server.test_and_set_client_new(token, False) # type: ignore
+
             telemetry_data = None
             shared_data = self.shared_data_
             with shared_data['condition']:
@@ -214,9 +215,11 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
                     {
                         'C': messageId,
                         'M': [
-                            { 'H': 'ets2telemetryhub',
-                              'M': 'UpdateData',
-                              'A': [telemetry_data] }
+                            {
+                                'H': 'ets2telemetryhub',
+                                'M': 'UpdateData',
+                                'A': [telemetry_data]
+                            }
                         ]
                     }
                 )
@@ -225,7 +228,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
 
             self.write_response(poll_json)
         elif self.path.startswith('/signalr/send'):
-            data = self.read_data()
+            data = str(self.read_data())
             post_data = urllib.parse.parse_qs(data)
             json_req = post_data['data'][0]
             req = json.loads(json_req)
@@ -239,16 +242,18 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
             with shared_data['condition']:
                 shared_data['new_data'] = False
                 # Copy the data
-                resp = { 'I': id,
-                         'R': shared_data['telemetry_data'] }
+                resp = {
+                    'I': id,
+                    'R': shared_data['telemetry_data']
+                }
                 resp_json = json.dumps(resp)
             self.write_response(resp_json)
         else:
             processed = False
-            
+
         return processed
 
-        
+
     def read_data(self):
         length = self.headers['Content-Length']
         if length is None:
@@ -259,7 +264,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
 
     def parse_query(self):
         return urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        
+
     def write_response(self, data, code=http.HTTPStatus.OK):
         utf8_data = data.encode('utf-8')
         self.send_response(code)
@@ -271,6 +276,10 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
         # TODO: Transfer-Encoding: chunked. Will likely affect shutdown behavior.
         self.end_headers()
         self.wfile.write(utf8_data)
+
+class ClientState:
+    token: Any
+    new: bool
 
 # Python 3.7 has built-in ThreadingHTTPServer, but Python 3.6 does not
 class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
@@ -293,7 +302,7 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
         # Make sure code does not get stuck in blocking read when trying to exit
         socket.setdefaulttimeout(1)
-        
+
         def handler(*args):
             return SignalrHandler(logger, shared_data, self.stop_event_, *args)
         super().__init__(('', SignalrHttpServer.PORT_NUMBER), handler)
@@ -333,7 +342,7 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
             self._clients[token] = state
             return state.token
 
-    def _get_client(self, token):
+    def _get_client(self, token) -> ClientState | None:
         client = self._clients.get(token)
         if client is None:
             self.add_client(token)
@@ -348,10 +357,11 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     def test_and_set_client_new(self, token, new_value):
         with self._state_lock:
             client = self._get_client(token)
-            old_value = client.new
-            client.new = new_value
-            return old_value
-        
+            if client:
+                old_value = client.new
+                client.new = new_value
+                return old_value
+
     def shutdown(self):
         # Stop accepting new connections
         super().shutdown()
@@ -361,6 +371,3 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         # Cancel the polling, to avoid blocking
         with self.shared_data_['condition']:
             self.shared_data_['condition'].notify_all()
-
-class ClientState:
-    pass
