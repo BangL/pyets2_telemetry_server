@@ -137,7 +137,7 @@ body {
   height: 25px;
   text-align: right;
 }
-.truck-blinkerLeftOn {
+.truck-blinkerLeftActive {
   background-image: url("images/blinker-left-off.png");
   position: absolute;
   left: 472px;
@@ -145,10 +145,10 @@ body {
   width: 90px;
   height: 50px;
 }
-.truck-blinkerLeftOn.yes {
+.truck-blinkerLeftActive.yes {
   background-image: url("images/blinker-left-on.png");
 }
-.truck-blinkerRightOn {
+.truck-blinkerRightActive {
   background-image: url("images/blinker-right-off.png");
   position: absolute;
   left: 925px;
@@ -156,7 +156,7 @@ body {
   width: 90px;
   height: 50px;
 }
-.truck-blinkerRightOn.yes {
+.truck-blinkerRightActive.yes {
   background-image: url("images/blinker-right-on.png");
 }
 .truck-lightsBeamHighOn {

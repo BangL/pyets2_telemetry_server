@@ -1,7 +1,7 @@
 ﻿// SEE Dashboard Skin Tutorial FOR MORE INFORMATION ABOUT THIS FILE
 
 Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
-    data.hasJob = data.trailer.attached;
+    data.hasJob = data.job.jobMarket != '';
     // round truck speed
     data.truck.speedRounded = Math.abs(data.truck.speed > 0
         ? Math.floor(data.truck.speed)
@@ -9,7 +9,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // convert kilometers per hour to miles per hour (just an example)
     data.truck.speedMph = data.truck.speed * 0.621371;
     // convert kg to t
-    data.trailer.mass = (data.trailer.mass / 1000.0) + 't';
+    data.cargo.mass = Math.floor(data.cargo.mass / 1000.0) + 't';
     // format odometer data as: 00000.0
     data.truck.odometer = utils.formatFloat(data.truck.odometer, 1);
     // convert gear to readable format

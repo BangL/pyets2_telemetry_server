@@ -34,7 +34,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // before it is displayed on the dashboard.
     // You may convert km/h to mph, kilograms to tons, etc.
 
-	data.hasJob = data.trailer.attached;      
+    data.hasJob = data.job.jobMarket != '';
     data.truck.speed = data.truck.speed * 0.621371;
     data.truck.cruiseControlSpeed = data.truck.cruiseControlSpeed * 0.621371;
     data.truck.speedRounded = Math.abs(data.truck.speed > 0
@@ -44,7 +44,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
         ? Math.floor(data.truck.cruiseControlSpeed)
         : 0;
     // convert kg to t
-    data.trailer.mass = data.hasJob ? (Math.round(data.trailer.mass / 1000.0) + 't') : '';
+    data.cargo.mass = data.hasJob ? (Math.round(data.cargo.mass / 1000.0) + 't') : '';
     // format odometer data as: 00000.0
     data.truck.odometer = utils.formatFloat(data.truck.odometer * 0.621371, 1);
     // convert gear to readable format
@@ -55,14 +55,26 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // convert rpm to rpm * 100
     data.truck.engineRpm = data.truck.engineRpm / 100;
     // calculate wear
-    var wearSumPercent = data.truck.wearEngine * 100 +
-        data.truck.wearTransmission * 100 +
-        data.truck.wearCabin * 100 +
-        data.truck.wearChassis * 100 +
-        data.truck.wearWheels * 100;
+    var wearSumPercent = data.truck.wearChassis * 100;
     wearSumPercent = Math.min(wearSumPercent, 100);
     data.truck.wearSum = Math.round(wearSumPercent) + '%';
-    data.trailer.wear = Math.round(data.trailer.wear * 100) + '%';
+    data.cargo.damage = Math.round(data.cargo.damage * 100) + '%';
+
+	var connectedTrailers = 0;
+	wearSumPercent = 0;
+	for (var i = 0; i < data.game.maxTrailerCount; i++) {
+		if (data.trailers[i].present) {
+			connectedTrailers++;
+			wearSumPercent += data.trailers[i].wearChassis * 100;
+			wearSumPercent += data.trailers[i].wearWheels * 100;
+			wearSumPercent += data.trailers[i].wearBody * 100;
+		}
+	}
+	if (connectedTrailers > 0) {
+        data.job.trailerDamagePercent = Math.floor(wearSumPercent / (connectedTrailers * 3)) + '%';
+    } else {
+        data.job.trailerDamagePercent = '0%';
+    }
     // return changed data to the core for rendering
     return data;
 };

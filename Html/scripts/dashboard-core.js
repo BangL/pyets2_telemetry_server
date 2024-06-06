@@ -5,12 +5,14 @@
             var Ets2Game = (function () {
                 function Ets2Game() {
                     this.connected = false;
+                    this.gameName = "";
                     this.paused = false;
                     this.time = "";
                     this.timeScale = 0;
                     this.nextRestStopTime = "";
                     this.version = "";
                     this.telemetryPluginVersion = "";
+                    this.maxTrailerCount = 10;
                 }
                 return Ets2Game;
             })();
@@ -24,6 +26,9 @@
                     this.sourceCompany = "";
                     this.destinationCity = "";
                     this.destinationCompany = "";
+                    this.specialTransport = false;
+                    this.jobMarket = "";
+                    this.plannedDistance = 0;
                 }
                 return Ets2Job;
             })();
@@ -74,7 +79,7 @@
                     this.brakeTemperature = 0;
                     this.adblue = 0;
                     this.adblueCapacity = 0;
-                    this.adblueAverageConsumpton = 0;
+                    //this.adblueAverageConsumpton = 0;
                     this.adblueWarningOn = false;
                     this.airPressure = 0;
                     this.airPressureWarningOn = false;
@@ -97,6 +102,7 @@
                     this.blinkerRightActive = false;
                     this.blinkerLeftOn = false;
                     this.blinkerRightOn = false;
+                    this.hazardWarningOn = false;
                     this.lightsParkingOn = false;
                     this.lightsBeamLowOn = false;
                     this.lightsBeamHighOn = false;
@@ -110,18 +116,51 @@
                     this.head = new Ets2Vector();
                     this.cabin = new Ets2Vector();
                     this.hook = new Ets2Vector();
+                    this.licensePlate = "";
+                    this.licensePlateCountryId = "";
+                    this.licensePlateCountry = "";
+                    this.wheelCount = 0;
+                    this.wheels = {};
                 }
                 return Ets2Truck;
             })();
 
-            var Ets2Trailer = (function () {
+            var Ets2Cargo = (function () {
+                function Ets2Cargo() {
+                    this.cargoLoaded = false;
+                    this.cargoId = "";
+                    this.cargo = "";
+                    this.mass = 0;
+                    this.unitMass = 0;
+                    this.unitCount = 0;
+                    this.damage = 0;
+                }
+                return Ets2Cargo;
+            })();
+
+            var Ets2Trailer = (function() {
                 function Ets2Trailer() {
+                    this.trailerNumber = 0;
                     this.attached = false;
+                    this.present = false;
                     this.id = "";
                     this.name = "";
-                    this.mass = 0;
-                    this.wear = 0;
+                    this.wearWheels = 0;
+                    this.wearChassis = 0;
+                    this.wearBody = 0;
+                    this.cargoDamage = 0;
+                    this.cargoAccessoryId = "";
+                    this.brandId = "";
+                    this.brand = "";
+                    this.bodyType = "";
+                    this.cargo = "";
+                    this.licensePlate = "";
+                    this.licensePlateCountry = "";
+                    this.licensePlateCountryId = "";
+                    this.chainType = "";
                     this.placement = new Ets2Placement();
+                    this.wheelCount = 0;
+                    this.wheels = {};
                 }
                 return Ets2Trailer;
             })();
@@ -133,6 +172,64 @@
                     this.speedLimit = 0;
                 }
                 return Ets2Navigation;
+            })();
+
+            var Ets2FinedEvent = (function () {
+                function Ets2FinedEvent() {
+                    this.fineOffense = "";
+                    this.fineAmount = 0;
+                    this.fined = false;
+                }
+                return Ets2FinedEvent;
+            })();
+
+            var Ets2JobEvent = (function () {
+                function Ets2JobEvent() {
+                    this.jobFinished = false;
+                    this.jobCancelled = false;
+                    this.jobDelivered = false;
+                    this.cancelPenalty = 0;
+                    this.revenue = 0;
+                    this.earnedXp = 0;
+                    this.cargoDamage = 0;
+                    this.distance = 0;
+                    this.deliveryTime = "";
+                    this.autoparkUsed = false;
+                    this.autoloadUsed = false;
+                }
+                return Ets2JobEvent;
+            })();
+
+            var Ets2TollgateEvent = (function () {
+                function Ets2TollgateEvent() {
+                    this.tollgateUsed = false;
+                    this.payAmount = 0;
+                }
+                return Ets2TollgateEvent;
+            })();
+
+            var Ets2FerryEvent = (function () {
+                function Ets2FerryEvent() {
+                    this.ferryUsed = false;
+                    this.sourceName = "";
+                    this.targetName = "";
+                    this.sourceId = "";
+                    this.targetId = "";
+                    this.payAmount = 0;
+                }
+                return Ets2FerryEvent;
+            })();
+
+            var Ets2TrainEvent = (function () {
+                function Ets2TrainEvent() {
+                    this.trainUsed = false;
+                    this.sourceName = "";
+                    this.targetName = "";
+                    this.sourceId = "";
+                    this.targetId = "";
+                    this.payAmount = 0;
+                }
+                return Ets2TrainEvent;
             })();
 
             var Ets2Vector = (function () {
@@ -160,9 +257,20 @@
                 function Ets2TelemetryData() {
                     this.game = new Ets2Game();
                     this.truck = new Ets2Truck();
-                    this.trailer = new Ets2Trailer();
+                    this.cargo = new Ets2Cargo();
                     this.job = new Ets2Job();
                     this.navigation = new Ets2Navigation();
+                    this.trailerCount = 0;
+                    this.trailers = {};
+                    for (i = 0; i < this.game.maxTrailerCount; i++) {
+                        this.trailers[i] = new Ets2Trailer();
+                    }
+                    this.trailer = this.trailers[0];
+                    this.finedEvent = new Ets2FinedEvent();
+                    this.jobEvent = new Ets2JobEvent();
+                    this.tollgateEvent = new Ets2TollgateEvent();
+                    this.ferryEvent = new Ets2FerryEvent();
+                    this.trainEvent = new Ets2TrainEvent();
                 }
                 return Ets2TelemetryData;
             })();
@@ -287,9 +395,7 @@
                 Dashboard.prototype.dataUpdateCallback = function (jsonData) {
                     var data = JSON.parse(jsonData);
                     this.process(data);
-                    // Requesting data just after getting it seems redundant.
-                    // Disabling the call.
-                    //this.requestDataUpdate();
+                    this.requestDataUpdate();
                 };
 
                 Dashboard.prototype.process = function (data, reason) {

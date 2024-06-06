@@ -34,7 +34,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // before it is displayed on the dashboard.
     // You may convert km/h to mph, kilograms to tons, etc.
 
-	data.hasJob = data.trailer.attached;      
+	data.hasJob = data.job.jobMarket != '';      
     data.truck.speed = data.truck.speed * 0.621371;
     data.truck.cruiseControlSpeed = data.truck.cruiseControlSpeed * 0.621371;
     data.truck.speedRounded = Math.abs(data.truck.speed > 0
@@ -44,7 +44,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
         ? Math.floor(data.truck.cruiseControlSpeed)
         : 0;
     // convert kg to t
-    data.trailer.mass = data.hasJob ? (Math.round(data.trailer.mass / 1000.0) + 't') : '';
+    data.cargo.mass = data.hasJob ? (Math.round(data.cargo.mass / 1000.0) + 't') : '';
     // format odometer data as: 00000.0
     data.truck.odometer = utils.formatFloat(data.truck.odometer * 0.621371, 1) + " mi";
     // convert gear to readable format
@@ -55,14 +55,9 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // convert rpm to rpm * 100
     data.truck.engineRpm = data.truck.engineRpm / 100;
     // calculate wear
-    var wearSumPercent = data.truck.wearEngine * 100 +
-        data.truck.wearTransmission * 100 +
-        data.truck.wearCabin * 100 +
-        data.truck.wearChassis * 100 +
-        data.truck.wearWheels * 100;
+    var wearSumPercent = data.truck.wearChassis * 100;
     wearSumPercent = Math.min(wearSumPercent, 100);
     data.truck.wearSum = Math.round(wearSumPercent) + '%';
-    data.trailer.wear = Math.round(data.trailer.wear * 100) + '%';
     data.truck.retarderBrake = data.truck.retarderBrake > 0
     		? true
     		: false;
@@ -75,7 +70,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
    	data.truck.airPressure2 = data.truck.airPressure;
    	data.truck.airPressureWarningOn2 = data.truck.airPressureWarningOn;
    	data.waterTemperature = utils.formatFloat(9/5 * (data.waterTemperature + 32), 0);
-   	data.trailer.mass = data.waterTemperature;
    	data.truck.fuelAverageConsumption = utils.formatFloat(378.5411784 / (1.609344 * data.truck.fuelAverageConsumption * 100 ) ,1) + 'mpg';
 
     // return changed data to the core for rendering

@@ -25,6 +25,7 @@
 import http
 import http.server
 import json
+import logging
 import os
 import posixpath
 import socket
@@ -142,7 +143,7 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             # Each request is handled in a new thread, so we need to set up
             # exception logging
-            pyets2lib.scshelpers.log_exception(e)
+            pyets2lib.scshelpers.log_exception(logging.getLogger(__package__), e)
             raise
 
     def do_signalr_comm(self):
@@ -264,7 +265,9 @@ class SignalrHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header('Content-type', 'application/json; charset=UTF-8')
         self.send_header('Connection', 'keep-alive')
-        self.send_header('Content-Length', len(utf8_data))
+        self.send_header('Content-Length', str(len(utf8_data)))
+        self.send_header('Cache-Control', 'no-cache')
+        self.send_header('Access-Control-Allow-Origin', '*')
         # TODO: Transfer-Encoding: chunked. Will likely affect shutdown behavior.
         self.end_headers()
         self.wfile.write(utf8_data)
@@ -302,7 +305,8 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         for d in os.scandir(skins_dir):
             if not d.is_dir():
                 continue
-            with open(d.path + '/config.json') as config_file:
+            filename = d.path + '/config.json'
+            with open(filename) as config_file:
                 try:
                     skin = json.load(config_file)
                 except:
@@ -328,7 +332,7 @@ class SignalrHttpServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
             state.new = True
             self._clients[token] = state
             return state.token
-    
+
     def _get_client(self, token):
         client = self._clients.get(token)
         if client is None:

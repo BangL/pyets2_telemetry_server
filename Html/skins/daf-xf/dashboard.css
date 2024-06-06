@@ -125,7 +125,7 @@ body {
   height: 70px;
   text-align: left;
 }
-.truck-blinkerLeftOn {
+.truck-blinkerLeftActive {
   background-image: url("images/blinker-left-off.png");
   position: absolute;
   left: 400px;
@@ -133,10 +133,10 @@ body {
   width: 131px;
   height: 59px;
 }
-.truck-blinkerLeftOn.yes {
+.truck-blinkerLeftActive.yes {
   background-image: url("images/blinker-left-on.png");
 }
-.truck-blinkerRightOn {
+.truck-blinkerRightActive {
   background-image: url("images/blinker-right-off.png");
   position: absolute;
   left: 1528px;
@@ -144,7 +144,7 @@ body {
   width: 131px;
   height: 59px;
 }
-.truck-blinkerRightOn.yes {
+.truck-blinkerRightActive.yes {
   background-image: url("images/blinker-right-on.png");
 }
 .truck-lightsBeamHighOn {
@@ -214,7 +214,7 @@ body {
 .truck-airPressureWarningOn.yes {
   background-image: url("images/warning.png");
 }
-.trailer-mass {
+.cargo-mass {
   color: #D8DFE5;
   font-family: Courier New, Courier, monospace;
   font-weight: bold;
