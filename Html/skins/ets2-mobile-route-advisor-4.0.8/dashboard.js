@@ -61,7 +61,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data) {
     data.currentFuelPercentage = (data.truck.fuel / data.truck.fuelCapacity) * 100;
     data.scsTruckDamage = getDamagePercentage(data);
     data.scsTruckDamageRounded = Math.floor(data.scsTruckDamage);
-    data.wearTrailerRounded = Math.floor(data.trailer.wear * 100);
+    data.wearTrailerRounded = Math.floor((data.trailer.wearChassis + data.trailer.wearBody) * 100 / 2);
     data.gameTime12h = getTime(data.game.time, 12);
     var originalTime = data.game.time;
     data.game.time = getTime(data.game.time, 24);
@@ -69,9 +69,10 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data) {
     if (tons.substr(tons.length - 2) === "00") {
         tons = parseInt(tons);
     }
-    data.trailerMassTons = data.trailer.attached ? (tons + ' t') : '';
-    data.trailerMassKg = data.trailer.attached ? data.cargo.mass + ' kg' : '';
-    data.trailerMassLbs = data.trailer.attached ? Math.round(data.cargo.mass * 2.20462) + ' lb' : '';
+    data.hasJob = data.job.jobMarket != '';
+    data.trailerMassTons = data.hasJob ? (tons + ' t') : '';
+    data.trailerMassKg = data.hasJob ? data.cargo.mass + ' kg' : '';
+    data.trailerMassLbs = data.hasJob ? Math.round(data.cargo.mass * 2.20462) + ' lb' : '';
     data.game.nextRestStopTimeArray = getDaysHoursMinutesAndSeconds(data.game.nextRestStopTime);
     data.game.nextRestStopTime = processTimeDifferenceArray(data.game.nextRestStopTimeArray);
     data.navigation.speedLimitMph = data.navigation.speedLimit * .621371;
@@ -139,7 +140,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.render = function (data) {
 
     // data - same data object as in the filter function
     $('.fillingIcon.truckDamage .top').css('height', (100 - data.scsTruckDamage) + '%');
-    $('.fillingIcon.trailerDamage .top').css('height', (100 - data.trailer.wear * 100) + '%');
+    $('.fillingIcon.trailerDamage .top').css('height', (100 - data.wearTrailerRounded) + '%');
     $('.fillingIcon.fuel .top').css('height', (100 - data.currentFuelPercentage) + '%');
     $('.fillingIcon.rest .top').css('height', (100 - getFatiguePercentage(data.game.nextRestStopTimeArray[1], data.game.nextRestStopTimeArray[2])) + '%');
 
@@ -208,7 +209,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.render = function (data) {
     updateSpeedIndicator(data.navigation.speedLimit, data.truck.speed);
 	
 	// Update UI if in special transport mission
-	updateDisplayForSpecialTransport(data.trailer.id);
+	updateDisplayForSpecialTransport(data.cargo.cargoId);
 
     return data;
 }
