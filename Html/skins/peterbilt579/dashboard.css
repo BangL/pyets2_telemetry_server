@@ -560,8 +560,8 @@ body {
 .cargo-mass,
 .cargo-cargo,
 ._truckWearInfo,
-._cargoDamageInfo,
 ._trailerWearInfo,
+._cargoDamageInfo,
 .job-remainingTime,
 ._jobIncome,
 ._jobSource,
@@ -576,8 +576,8 @@ body {
 .dashboard.game-connected.yes .truck-lightsParkingOn,
 .dashboard.game-connected.yes .shifter-gear,
 .dashboard.game-connected.yes ._truckWearInfo,
-.dashboard.game-connected.yes ._cargoDamageInfo,
 .dashboard.game-connected.yes ._trailerWearInfo,
+.dashboard.game-connected.yes ._cargoDamageInfo,
 .dashboard.game-connected.yes .truck-odometer,
 .dashboard.game-connected.yes .truck-speedRounded,
 .dashboard.game-connected.yes .truck-cruiseControlSpeedRounded:not([data-value="0"]) {
@@ -618,12 +618,11 @@ table._job td {
   color: coral;
 }
 ._truckWearInfo,
-._cargoDamageInfo,
-._trailerWearInfo {
+._trailerWearInfo,
+._cargoDamageInfo {
   font-family: Courier New, Courier, monospace;
   font-size: 26px;
   position: absolute;
-  left: 1600px;
   top: 1066px;
   width: 330px;
   height: 30px;
@@ -631,11 +630,14 @@ table._job td {
   color: #aaa;
   line-height: 90%;
 }
-._cargoDamageInfo {
-  left: 1810px;
-}
 ._truckWearInfo {
   left: 1368px;
+}
+._cargoDamageInfo {
+  left: 1600px;
+}
+._cargoDamageInfo {
+  left: 1810px;
 }
 .truck-wearSum,
 .cargo-damage {

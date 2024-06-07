@@ -637,29 +637,35 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                          ? data.job.destinationCity + ' - ' + data.job.destinationCompany
                          : data.job.destinationCity != '' ? data.job.destinationCity : '';
 
-    data.truck.wearEngine       = Math.floor(data.truck.wearEngine * 100);
-    data.truck.wearTransmission = Math.floor(data.truck.wearTransmission * 100);
-    data.truck.wearCabin        = Math.floor(data.truck.wearCabin * 100);
-    data.truck.wearChassis      = Math.floor(data.truck.wearChassis * 100);
-    data.truck.wearWheels       = Math.floor(data.truck.wearWheels * 100);
-    data._truckWear = Math.max(data.truck.wearEngine,
-                               data.truck.wearTransmission,
-                               data.truck.wearCabin,
-                               data.truck.wearChassis,
-                               data.truck.wearWheels) + '%';
+    data.truck.wearEngine       = Math.round(data.truck.wearEngine * 100);
+    data.truck.wearTransmission = Math.round(data.truck.wearTransmission * 100);
+    data.truck.wearCabin        = Math.round(data.truck.wearCabin * 100);
+    data.truck.wearChassis      = Math.round(data.truck.wearChassis * 100);
+    data.truck.wearWheels       = Math.round(data.truck.wearWheels * 100);
+    data._truckWear = Math.round((data.truck.wearEngine +
+                                  data.truck.wearTransmission +
+                                  data.truck.wearCabin +
+                                  data.truck.wearChassis +
+                                  data.truck.wearWheels) / 5) + '%';
+
     var connectedTrailers = 0;
+    var trailersWearBody = 0;
     var trailersWearChassis = 0;
     var trailersWearWheels = 0;
     for (var i = 0; i < data.game.maxTrailerCount; i++) {
         if (data.trailers[i].present) {
             connectedTrailers++;
+            trailersWearBody += data.trailers[i].wearBody * 100;
             trailersWearChassis += data.trailers[i].wearChassis * 100;
             trailersWearWheels += data.trailers[i].wearWheels * 100;
         }
     }
-    data._trailerWearChassis = Math.floor(trailersWearChassis / connectedTrailers);
-    data._trailerWearWheels  = Math.floor(trailersWearWheels / connectedTrailers);
-    data._trailerWear = data.trailer.attached ? Math.max(data._trailerWearChassis, data._trailerWearWheels) + '%' : '';
+    data._trailerWearBody = Math.round(trailersWearBody / connectedTrailers);
+    data._trailerWearChassis = Math.round(trailersWearChassis / connectedTrailers);
+    data._trailerWearWheels  = Math.round(trailersWearWheels / connectedTrailers);
+    data._trailerWear = data.trailer.attached ? Math.round((data._trailerWearBody +
+                                                            data._trailerWearChassis +
+                                                            data._trailerWearWheels) / 3) + '%' : '';
 
     data._speedLimit    = data.navigation.speedLimit > 0;
     data._speedLimitKMH = data.navigation.speedLimit > 0 ? data.navigation.speedLimit : '';

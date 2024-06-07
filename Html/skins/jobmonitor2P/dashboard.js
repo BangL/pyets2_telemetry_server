@@ -72,112 +72,14 @@ Funbit.Ets.Telemetry.Dashboard.prototype.initialize = function (skinConfig, util
     $('.dashboard').css('height', windowHeight / ratio);
     $('div.PrincipalMessage').css('height', (windowHeight - document.getElementById('PrincipalMessage').getBoundingClientRect().top) / ratio + 'px');
 
-    //Language switch
-    //alert(navigator.language.toLowerCase());
-    if (navigator.language.substring(0, 5).toLowerCase() === 'pt-br') {
-        document.getElementById('tSummary').innerHTML = 'Resumo';
-        document.getElementById('tNavDate').innerHTML = 'Data:';
-        document.getElementById('tNavDeadline').innerHTML = 'Prazo:';
-        document.getElementById('tNavCargo').innerHTML = 'Carga:';
-        document.getElementById('tNavWeight').innerHTML = 'Peso:';
-        document.getElementById('tNavFrom').innerHTML = 'De:';
-        document.getElementById('tNavTo').innerHTML = 'Para:';
-        document.getElementById('tNavDistance').innerHTML = 'Distância:';
-        document.getElementById('tNavRange').innerHTML = 'Alcance:';
-        document.getElementById('tNavRemaining').innerHTML = 'Restando:';
-        document.getElementById('tNavRevenue').innerHTML = 'Receita:';
-        document.getElementById('tNavUnit').innerHTML = 'Unidade:';
-        document.getElementById('tEM').innerHTML = 'WoT';
-        document.getElementById('tEMTime').innerHTML = 'Data:';
-        document.getElementById('tEMDeadline').innerHTML = 'Prazo:';
-        document.getElementById('tEMRemainingTime').innerHTML = 'Tempo Restante:';
-        document.getElementById('tEMDays').innerHTML = 'Dias:';
-        document.getElementById('tEMHours').innerHTML = 'Horas:';
-        document.getElementById('tEMMinutes').innerHTML = 'Minutos:';
-        document.getElementById('tEMSubmit').innerHTML = 'Enviar';
-        document.getElementById('tDamage').innerHTML = 'Dano';
-        document.getElementById('tDamageCargo').innerHTML = 'Carga:';
-        document.getElementById('tDamageTrailer').innerHTML = 'Carreta';
-        document.getElementById('tDamageTrailerChassis').innerHTML = 'Chassi:';
-        //document.getElementById('tDamageTrailerBody').innerHTML = 'Chassi:'; // FIXME
-        document.getElementById('tDamageTrailerWheels').innerHTML = 'Pneus:';
-        document.getElementById('tDamageTruck').innerHTML = 'Cavalo';
-        document.getElementById('tDamageTruckEngine').innerHTML = 'Motor:';
-        document.getElementById('tDamageTruckCabin').innerHTML = 'Cabine:';
-        document.getElementById('tDamageTruckChassis').innerHTML = 'Chassi:';
-        document.getElementById('tDamageTruckWheels').innerHTML = 'Pneus:';
-        document.getElementById('tProgress').innerHTML = 'Progresso';
-        document.getElementById('tProgressActual').innerHTML = 'Atual';
-        document.getElementById('tProgressActualEstimated').innerHTML = 'Estimativa:';
-        document.getElementById('tProgressActualStops').innerHTML = 'Paradas:';
-        document.getElementById('tProgressActualRemaining').innerHTML = 'Restará:';
-        document.getElementById('tProgressActualLeaving').innerHTML = 'Sobrará:';
-        document.getElementById('tProgressMinimal').innerHTML = 'Mínima';
-        document.getElementById('tProgressMinimalEstimated').innerHTML = 'Estimativa:';
-        document.getElementById('tProgressMinimalStops').innerHTML = 'Paradas:';
-        document.getElementById('tProgressMinimalRemaining').innerHTML = 'Restará:';
-        document.getElementById('tProgressMinimalLeaving').innerHTML = 'Sobrará:';
-        document.getElementById('tProgressResting').innerHTML = 'Se Parar';
-        document.getElementById('tProgressRestingEstimated').innerHTML = 'Estimativa:';
-        document.getElementById('tProgressRestingStops').innerHTML = 'Paradas:';
-        document.getElementById('tProgressRestingRemaining').innerHTML = 'Restará:';
-        document.getElementById('tProgressRestingLeaving').innerHTML = 'Sobrará:';
-
-        tPaused = 'Pausa';
-        tRetreived = 'Exibindo dados do último jogo';
-        tEMWarning1 = 'Os trabalhos para o World of Truck infelizmente não indicam o tempo restante e, sem isso, não há como calcular as velocidades e as paradas.';
-        tEMWarning2 = 'Pause o jogo e digite nos campos acima o Tempo Restante indicado no canto superior esquerdo da tela principal.';
-        tEMWarning3 = 'Toque em qualquer outro lugar para fechar esta tela.';
-        tOffLine1 = 'Inicie o jogo e entre na cabine';
-        tOffLine2 = 'Verifique o wi-fi ou reinicie o ETS2Telemetry se já estiver dirigindo';
-        tSlowDown = 'Devagar';
-        tTo = 'Para: ';
-        tImpossibleSchedule = 'Prazo irrealizável';
-        tScheduleCompromised = 'Prazo apertado';
-        tRestNextStop = 'Descanse na próxima parada';
-        tConsiderStop = 'Pare para descançar';
-        tScheduleSeemsGood = 'o prazo está bom';
-        tScheduleMayBeCompromised = 'prazo em risco';
-        tWithinCityLimits = 'dentro de cidade';
-        tYouNeedRest = 'Você PRECISA descansar';
-        tGoodTimeRest = 'Boa hora para descansar';
-        tRestIfWish = 'Se quiser, descanse';
-        tDontNeedRest = 'Não precisa descansar';
-        tDoNotRest = 'NÃO DESCANSE';
-        tDeliveryOverdue = 'Prazo não cumprido';
-        tDeliveryLast1h = 'Menos de 1h para entrega';
-        tDeliveryLast2h = 'Menos de 2h para entrega';
-        tScheduleOk = 'O prazo está bom';
-        tSpeedUp = 'Ganhe tempo';
-        tRepairTheTruck = 'Conserte o caminhão';
-        tChangeTruckTyres = 'Troque os pneus do caminhão';
-        tKilometer = 'Quilômetros';
-        tMiles = 'Milhas';
-        tKPH = 'km/h';
-        tMPH = 'mph';
-
-        if (skinConfig.width > skinConfig.height) {
-            document.getElementById('tNav').innerHTML = 'Navegação';
-            document.getElementById('tDamageTruckTransmission').innerHTML = 'Transmissão:';
-            tWeeday = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-        } else {
-            document.getElementById('tNav').innerHTML = 'Nav';
-            document.getElementById('tDamageTruckTransmission').innerHTML = 'Transm.:';
-            tWeeday = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        }
-
+    if (skinConfig.width > skinConfig.height) {
+        document.getElementById('tNav').innerHTML = 'Navigation';
+        document.getElementById('tDamageTruckTransmission').innerHTML = 'Transmission:';
+        tWeeday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     } else {
-
-        if (skinConfig.width > skinConfig.height) {
-            document.getElementById('tNav').innerHTML = 'Navigation';
-            document.getElementById('tDamageTruckTransmission').innerHTML = 'Transmission:';
-            tWeeday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        } else {
-            document.getElementById('tNav').innerHTML = 'Nav';
-            document.getElementById('tDamageTruckTransmission').innerHTML = 'Transm.:';
-            tWeeday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        }
-
+        document.getElementById('tNav').innerHTML = 'Nav';
+        document.getElementById('tDamageTruckTransmission').innerHTML = 'Transm.:';
+        tWeeday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     }
 
     zDay = new Date('0001-01-01T00:00:00Z');
@@ -504,24 +406,23 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     data.hasJob = hasJob;
 
     //Wear
-    data.truck.wearEngine *= 1000;
-    data.truck.wearTransmission *= 1000;
-    data.truck.wearCabin *= 1000;
-    data.truck.wearChassis *= 1000;
-    data.truck.wearWheels *= 1000;
-    data.cargo.damage = hasJob ? data.cargo.damage * 1000 : '--';
-    data.trailerWearWheels = '--';
-    data.trailerWearChassis = '--';
+    data.truck.wearEngine *= 100;
+    data.truck.wearTransmission *= 100;
+    data.truck.wearCabin *= 100;
+    data.truck.wearChassis *= 100;
+    data.truck.wearWheels *= 100;
+    data.cargo.damage = hasJob ? data.cargo.damage * 100 : '--';
     data.trailerWearBody = '--';
-    data.trailerAttached = false;
+    data.trailerWearChassis = '--';
+    data.trailerWearWheels = '--';
+    data.trailerAttached = data.trailer.attached;
     if (data.trailerCount > 0) {
-        data.trailerWearWheels = 1000 * data.trailers[0].wearWheels;
-        data.trailerWearChassis = 1000 * data.trailers[0].wearChassis;
-        data.trailerWearBody = 1000 * data.trailers[0].wearBody;
-        data.trailerAttached = data.trailers[0].attached;
+        data.trailerWearBody = 100 * data.trailer.wearBody;
+        data.trailerWearChassis = 100 * data.trailer.wearChassis;
+        data.trailerWearWheels = 100 * data.trailer.wearWheels;
     }
-    var truckSum = (data.truck.wearEngine + data.truck.wearTransmission + data.truck.wearCabin + data.truck.wearChassis) / 4;
-    var trailerSum = (data.trailerWearChassis + data.trailerWearBody) / 2;
+    data.truck.wearSum = (data.truck.wearEngine + data.truck.wearTransmission + data.truck.wearCabin + data.truck.wearChassis) / 4;
+    data.trailer.wearSum = (data.trailerWearBody + data.trailerWearChassis) / 2;
 
     //JOB STUFF
     //Job viability
@@ -812,16 +713,16 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
 
     //warning damage
     if (data.game.connected) {
-        if (truckSum > 100) {
+        if (data.truck.wearSum > 10) {
             message += tRepairTheTruck + lb;
         }
-        if (data.truck.wearWheels > 200) {
+        if (data.truck.wearWheels > 20) {
             message += tChangeTruckTyres + lb;
         }
 
         var Ds = ["TruckWheelNormal", "TruckWheelSteerable", "TruckWheelPowered", "TrailerWheelNormal", "TrailerWheelSteerable", "TrailerWheelPowered"];
         var Vs = [data.truck.wearWheels, data.truck.wearWheels, data.truck.wearWheels, data.trailerWearWheels, data.trailerWearWheels, data.trailerWearWheels];
-        var Ls = [200, 200, 200, 200, 200, 200];
+        var Ls = [20, 20, 20, 20, 20, 20];
         Ds.forEach(function (item, index) {
             if (isNaN(Vs[index])) {
                 $('.' + item).css('fill', 'none');
@@ -836,8 +737,8 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
         });
 
         Ds = ["Trailer", "Truck", "Cargo"];
-        Vs = [trailerSum, truckSum, data.cargo.damage];
-        Ls = [200, 200, 100];
+        Vs = [data.trailer.wearSum, data.truck.wearSum, data.cargo.damage];
+        Ls = [20, 20, 10];
         Ds.forEach(function (item, index) {
             if (isNaN(Vs[index])) {
                 $('.' + item).css('fill', 'none');
@@ -851,9 +752,9 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
             }
         });
 
-        Ds = ["cargo-damage", "trailerWearChassis", "trailerWearBody", "trailerWearWheels", "truck-wearEngine", "truck-wearTransmission", "truck-wearCabin", "truck-wearChassis", "truck-wearWheels"];
-        Vs = [data.cargo.damage, data.trailerWearChassis, data.trailerWearBody, data.trailerWearWheels, data.truck.wearEngine, data.truck.wearTransmission, data.truck.wearCabin, data.truck.wearChassis, data.truck.wearWheels];
-        Ls = [100, 200, 200, 200, 50, 50, 100, 100, 200];
+        Ds = ["cargo-damage", "trailerWearBody", "trailerWearChassis", "trailerWearWheels", "truck-wearEngine", "truck-wearTransmission", "truck-wearCabin", "truck-wearChassis", "truck-wearWheels"];
+        Vs = [data.cargo.damage, data.trailerWearBody, data.trailerWearChassis, data.trailerWearWheels, data.truck.wearEngine, data.truck.wearTransmission, data.truck.wearCabin, data.truck.wearChassis, data.truck.wearWheels];
+        Ls = [10, 20, 20, 20, 5, 5, 10, 10, 20];
         Ds.forEach(function (item, index) {
             var o = Vs[index] > Ls[index] ? 0 : 1 - Vs[index] / Ls[index];
             $('.' + item).css('color', 'rgb(255, ' + 255 * o + ', ' + 255 * o + "'");
@@ -930,18 +831,18 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
 
     data.job.sourceCompany = data.job.sourceCompany === '' ? '--' : data.job.sourceCompany;
     data.job.destinationCompany = data.job.destinationCompany === '' ? '--' : data.job.destinationCompany;
-    data.cargoDamage = isNaN(data.cargo.damage) ? '' : utils.formatFloat(data.cargo.damage, 2) + '‰';
-    data.cargo.damage = isNaN(data.cargo.damage) ? '--' : utils.formatFloat(data.cargo.damage, 4) + '‰';
-    data.truckSum = isNaN(truckSum) ? '--' : utils.formatFloat(truckSum, 2) + '‰';
-    data.trailerSum = isNaN(trailerSum) ? '--' : utils.formatFloat(trailerSum, 2) + '‰';
-    data.trailerWearChassis = isNaN(data.trailerWearChassis) ? '--' : utils.formatFloat(data.trailerWearChassis, 2) + '‰';
-    data.trailerWearBody = isNaN(data.trailerWearBody) ? '--' : utils.formatFloat(data.trailerWearBody, 2) + '‰';
-    data.trailerWearWheels = isNaN(data.trailerWearWheels) ? '--' : utils.formatFloat(data.trailerWearWheels, 2) + '‰';
-    data.truck.wearEngine = isNaN(data.truck.wearEngine) ? '--' : utils.formatFloat(data.truck.wearEngine, 2) + '‰';
-    data.truck.wearTransmission = isNaN(data.truck.wearTransmission) ? '--' : utils.formatFloat(data.truck.wearTransmission, 2) + '‰';
-    data.truck.wearCabin = isNaN(data.truck.wearCabin) ? '--' : utils.formatFloat(data.truck.wearCabin, 2) + '‰';
-    data.truck.wearChassis = isNaN(data.truck.wearChassis) ? '--' : utils.formatFloat(data.truck.wearChassis, 2) + '‰';
-    data.truck.wearWheels = isNaN(data.truck.wearWheels) ? '--' : utils.formatFloat(data.truck.wearWheels, 2) + '‰';
+    data.cargoDamage = isNaN(data.cargo.damage) ? '' : utils.formatFloat(data.cargo.damage, 2) + '%';
+    data.cargo.damage = isNaN(data.cargo.damage) ? '--' : utils.formatFloat(data.cargo.damage, 4) + '%';
+    data.truck.wearSum = isNaN(data.truck.wearSum) ? '--' : utils.formatFloat(data.truck.wearSum, 2) + '%';
+    data.trailer.wearSum = isNaN(data.trailer.wearSum) ? '--' : utils.formatFloat(data.trailer.wearSum, 2) + '%';
+    data.trailerWearBody = isNaN(data.trailerWearBody) ? '--' : utils.formatFloat(data.trailerWearBody, 2) + '%';
+    data.trailerWearChassis = isNaN(data.trailerWearChassis) ? '--' : utils.formatFloat(data.trailerWearChassis, 2) + '%';
+    data.trailerWearWheels = isNaN(data.trailerWearWheels) ? '--' : utils.formatFloat(data.trailerWearWheels, 2) + '%';
+    data.truck.wearEngine = isNaN(data.truck.wearEngine) ? '--' : utils.formatFloat(data.truck.wearEngine, 2) + '%';
+    data.truck.wearTransmission = isNaN(data.truck.wearTransmission) ? '--' : utils.formatFloat(data.truck.wearTransmission, 2) + '%';
+    data.truck.wearCabin = isNaN(data.truck.wearCabin) ? '--' : utils.formatFloat(data.truck.wearCabin, 2) + '%';
+    data.truck.wearChassis = isNaN(data.truck.wearChassis) ? '--' : utils.formatFloat(data.truck.wearChassis, 2) + '%';
+    data.truck.wearWheels = isNaN(data.truck.wearWheels) ? '--' : utils.formatFloat(data.truck.wearWheels, 2) + '%';
 
     data.driverFatigueTime = isNaN(data.driverFatigueTime) ? '--' : minsToReadableTime(data.driverFatigueTime, utils);
     data.jobRemainingTime = data.job.remainingTime;
@@ -1050,8 +951,8 @@ PushDataAlternative = function (data) {
     document.getElementById('unit').innerHTML = data.unit;
 
     document.getElementById('cargo-damage').innerHTML = data.cargo.damage;
-    document.getElementById('trailerWearChassis').innerHTML = data.trailerWearChassis;
     document.getElementById('trailerWearBody').innerHTML = data.trailerWearBody;
+    document.getElementById('trailerWearChassis').innerHTML = data.trailerWearChassis;
     document.getElementById('trailerWearWheels').innerHTML = data.trailerWearWheels;
     document.getElementById('truck-wearEngine').innerHTML = data.truck.wearEngine;
     document.getElementById('truck-wearTransmission').innerHTML = data.truck.wearTransmission;

@@ -52,9 +52,15 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     // convert rpm to rpm * 100
     data.truck.engineRpm = data.truck.engineRpm / 100;
     // calculate wear
-    var wearSumPercent = data.truck.wearChassis * 100;
+    var wearSumPercent = (data.truck.wearEngine +
+                          data.truck.wearTransmission +
+                          data.truck.wearCabin +
+                          data.truck.wearChassis +
+                          data.truck.wearWheels) * 100 / 5;
     wearSumPercent = Math.min(wearSumPercent, 100);
     data.truck.wearSum = Math.round(wearSumPercent) + '%';
+
+
     data.truck.retarderBrake = data.truck.retarderBrake > 0
     		? true
     		: false;

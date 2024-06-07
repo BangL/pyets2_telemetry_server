@@ -547,6 +547,18 @@ body {
     z-index: -1;
 }
 
+.trailer-wearBody {
+    /* FIXME
+    position: absolute;
+    background-color: #28281E;
+    left: 630px;
+    top: 694px;
+    width: 53px;
+    height: 12px;
+    z-index: -1; */
+    display: none;
+}
+
 .trailer-wearChassis {
     position: absolute;
     background-color: #28281E;

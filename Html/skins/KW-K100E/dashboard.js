@@ -99,6 +99,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
 		$('.truck-wearTransmission').css('visibility', 'visible');
 		$('.truck-wearChassis').css('visibility', 'visible');
 		$('.truck-wearWheels').css('visibility', 'visible');
+		$('.trailer-wearBody').css('visibility', 'visible');
 		$('.trailer-wearChassis').css('visibility', 'visible');
 		$('.trailer-wearWheels').css('visibility', 'visible');
 		$('.truck-wipersOn').css('visibility', 'visible');
@@ -125,6 +126,7 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
 		$('.truck-wearTransmission').css('visibility', 'hidden');
 		$('.truck-wearChassis').css('visibility', 'hidden');
 		$('.truck-wearWheels').css('visibility', 'hidden');
+		$('.trailer-wearBody').css('visibility', 'hidden');
 		$('.trailer-wearChassis').css('visibility', 'hidden');
 		$('.trailer-wearWheels').css('visibility', 'hidden');
 		$('.truck-wipersOn').css('visibility', 'hidden');
@@ -290,18 +292,38 @@ Funbit.Ets.Telemetry.Dashboard.prototype.render = function (data, utils) {
     }
 
  	var connectedTrailers = 0;
+	var wearSumBody = 0;
 	var wearSumChassis = 0;
 	var wearSumWheels = 0;
 		for (var i = 0; i <= data.trailerCount; i++) {
 			if (data.trailers[i] !== undefined) {
 				connectedTrailers++;
+				wearSumBody += data.trailers[i].wearBody;
 				wearSumChassis += data.trailers[i].wearChassis;
 				wearSumWheels += data.trailers[i].wearWheels;
 			}
 		}
 
+	var trailerWearBody = wearSumBody / connectedTrailers;
 	var trailerWearChassis = wearSumChassis / connectedTrailers;
 	var trailerWearWheels = wearSumWheels / connectedTrailers;
+
+    if (trailerWearBody > 0 && trailerWearBody < 0.05) {
+        $('.trailer-wearBody').css('backgroundColor', '#28281E');
+        $('.trailer-wearBody').css('animation', 'myreserve 0s linear infinite');
+    } else if (trailerWearBody >= 0.05 && trailerWearBody < 0.1) {
+        $('.trailer-wearBody').css('backgroundColor', 'yellow');
+        $('.trailer-wearBody').css('animation', 'myreserve 0s linear infinite');
+    } else if (trailerWearBody >= 0.1 && trailerWearBody < 0.15) {
+        $('.trailer-wearBody').css('backgroundColor', 'orange');
+        $('.trailer-wearBody').css('animation', 'myreserve 0s linear infinite');
+    } else if (trailerWearBody >= 0.15) {
+        $('.trailer-wearBody').css('backgroundColor', 'red');
+        $('.trailer-wearBody').css('animation', 'myreserve 1s linear infinite');
+    } else {
+        $('.trailer-wearBody').css('backgroundColor', '#28281E');
+        $('.trailer-wearBody').css('animation', 'myreserve 0s linear infinite');
+    }
 
     if (trailerWearChassis > 0 && trailerWearChassis < 0.05) {
         $('.trailer-wearChassis').css('backgroundColor', '#28281E');

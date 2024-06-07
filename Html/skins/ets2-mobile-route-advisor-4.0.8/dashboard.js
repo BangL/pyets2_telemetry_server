@@ -38,8 +38,8 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data) {
 
     data.currentFuelPercentage = (data.truck.fuel / data.truck.fuelCapacity) * 100;
     data.scsTruckDamage = getDamagePercentage(data);
-    data.scsTruckDamageRounded = Math.floor(data.scsTruckDamage);
-    data.wearTrailerRounded = Math.floor((data.trailer.wearChassis + data.trailer.wearBody) * 100 / 2);
+    data.scsTruckDamageRounded = Math.round(data.scsTruckDamage);
+    data.wearTrailerRounded = Math.round((data.trailer.wearChassis + data.trailer.wearBody + data.trailer.wearWheels) * 100 / 3);
     data.gameTime12h = getTime(data.game.time, 12);
     var originalTime = data.game.time;
     data.game.time = getTime(data.game.time, 24);
@@ -416,11 +416,11 @@ function getAtsJobIncome(income) {
 
 function getDamagePercentage(data) {
     // Return the max value of all damage percentages.
-    return Math.max(data.truck.wearEngine,
-                    data.truck.wearTransmission,
-                    data.truck.wearCabin,
-                    data.truck.wearChassis,
-                    data.truck.wearWheels) * 100;
+    return (data.truck.wearEngine +
+            data.truck.wearTransmission +
+            data.truck.wearCabin +
+            data.truck.wearChassis +
+            data.truck.wearWheels) * 100 / 5;
 }
 
 function showTab(tabName) {
