@@ -135,7 +135,8 @@ def update_gear_names():
         elif fwd_gears == 13:
             fwd_names = ["N", "L", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
         elif fwd_gears == 12:
-            fwd_names = ["N", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+            fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H"] if is_ets2 else \
+                                   ["N", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
 
         if rev_gears == 4:
             rev_names = ["N", "R1L", "R1H", "R2L", "R2H"]
