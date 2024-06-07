@@ -231,7 +231,7 @@ body {
   text-align: left;
   
 }
-.truck-gear {
+.shifter-gear {
   color: #E7EAE4;
   font-family: sans-serif;
   font-weight: bold;
@@ -245,10 +245,10 @@ body {
   
 }
 
-.truck-gear[data-value="N"] {
+.shifter-gear[data-value="N"] {
   color: #2c8a26;
 }
-.truck-gear[data-value="R"] {
+.shifter-gear[data-value*="R"] {
   color: #ddff00;
 }
 .truck-odometer {
@@ -547,7 +547,7 @@ body {
 ._jobIncome {
   color: #5dd954;
 }
-.truck-gear,
+.shifter-gear,
 .truck-blinkerLeftActive,
 .truck-blinkerRightActive,
 .truck-cruiseControlOn,
@@ -574,7 +574,7 @@ body {
 .dashboard.game-connected.yes .truck-lightsBeamHighOn,
 .dashboard.game-connected.yes .truck-lightsBeamLowOn,
 .dashboard.game-connected.yes .truck-lightsParkingOn,
-.dashboard.game-connected.yes .truck-gear,
+.dashboard.game-connected.yes .shifter-gear,
 .dashboard.game-connected.yes ._truckWearInfo,
 .dashboard.game-connected.yes ._cargoDamageInfo,
 .dashboard.game-connected.yes ._trailerWearInfo,

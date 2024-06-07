@@ -113,7 +113,7 @@ body {
   -o-transform-origin: 50% 133px;
   transform-origin: 50% 133px;
 }
-.truck-gear {
+.shifter-gear {
   color: #F3F3F3;
   font-family: Courier New, Courier, monospace;
   font-weight: bold;
@@ -125,10 +125,10 @@ body {
   height: 100px;
   text-align: center;
 }
-.truck-gear[data-value="N"] {
+.shifter-gear[data-value="N"] {
   color: #F3F3F3;
 }
-.truck-gear[data-value="R"] {
+.shifter-gear[data-value*="R"] {
   color: #F3F3F3;
 }
 .truck-odometer {
@@ -281,7 +281,7 @@ body {
 .job-remainingTime {
   color: #54d9a8;
 }
-.truck-gear,
+.shifter-gear,
 .truck-odometer,
 .truck-speed,
 .cargo-mass,
@@ -291,7 +291,7 @@ body {
 ._jobDestionation {
   visibility: hidden;
 }
-.dashboard.game-connected.yes .truck-gear,
+.dashboard.game-connected.yes .shifter-gear,
 .dashboard.game-connected.yes .truck-odometer,
 .dashboard.game-connected.yes .truck-speed {
   visibility: visible;

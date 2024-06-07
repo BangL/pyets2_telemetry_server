@@ -59,7 +59,7 @@ body {
   -o-transform-origin: 50% 190px;
   transform-origin: 50% 190px;
 }
-.truck-gear {
+.shifter-gear {
   color: #D3D395;
   font-family: Courier New, Courier, monospace;
   font-weight: bold;
@@ -71,10 +71,10 @@ body {
   height: 100px;
   text-align: center;
 }
-.truck-gear[data-value="N"] {
+.shifter-gear[data-value="N"] {
   color: #D3D395;
 }
-.truck-gear[data-value="R"] {
+.shifter-gear[data-value*="R"] {
   color: #D3D395;
 }
 .truck-odometer {

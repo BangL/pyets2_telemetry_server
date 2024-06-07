@@ -194,7 +194,8 @@ body { cursor: auto; user-select: none; }
     height: 8px;
 }
 
-._displayedGear {
+.shifter-displayedGearName {
+    display: block;
     color: rgb(0, 0, 0);
     font-family: 'DS Digital Bold', sans-serif;
     font-size: 95px;
@@ -207,10 +208,8 @@ body { cursor: auto; user-select: none; }
     width: 150px;
     height: 95px;
 }
-._displayedGearD { display: block; }
-._displayedGearH { display: none; }
 
-._noticeShifter, ._noticeDial, ._noticeSpeed {
+._noticeDial, ._noticeSpeed {
     background: linear-gradient(to right, rgb(182, 157, 97) 0%, rgb(218, 181, 99) 50%, rgb(182, 157, 97) 100%);
     box-shadow: inset 0px 0px 10px 2px rgb(132, 114, 70),
                 inset 0px 0px 1px 1px rgb(255, 255, 255),
@@ -804,7 +803,7 @@ body { cursor: auto; user-select: none; }
     height: 360px;
 }
 
-._switchShifter, ._switchDial, ._switchSpeed, ._closeTips {
+._switchDial, ._switchSpeed, ._closeTips {
     cursor: pointer;
     display: block;
     position: absolute;

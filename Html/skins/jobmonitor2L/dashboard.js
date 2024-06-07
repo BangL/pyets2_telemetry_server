@@ -946,11 +946,11 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     data.driverFatigueTime = isNaN(data.driverFatigueTime) ? '--' : minsToReadableTime(data.driverFatigueTime, utils);
     data.jobRemainingTime = data.job.remainingTime;
 
-    // data.bestGear = "";
-    // if (data.truck.engineOn === true)
-    //     if ((data.truck.engineRpm > 700 && data.truck.engineRpm < 900) || data.truck.engineRpm > 1600)
-    //         if (data.truck.gear !== data.shifter.bestGear)
-    //             data.bestGear = ((data.truck.gear > data.shifter.bestGear) ? "▼" : "▲") + data.shifter.bestGearName;
+    data.bestGear = "";
+    if (data.truck.engineOn === true)
+        if ((data.truck.engineRpm > 700 && data.truck.engineRpm < 900) || data.truck.engineRpm > 1600)
+            if (data.shifter.gear !== data.shifter.bestGear)
+                data.bestGear = ((data.shifter.gear > data.shifter.bestGear) ? "▼" : "▲") + data.shifter.bestGearName;
 
     //cityLimits
     if (data.navigation.cityLimits > 1 && actualTable === document.getElementById('Principal')) {
@@ -1027,7 +1027,7 @@ PushDataAlternative = function (data) {
     document.getElementById('jobRemainingTime').innerHTML = data.jobRemainingTime;
 
     document.getElementById('navigation-speedLimit').innerHTML = data.navigation.speedLimit;
-    // document.getElementById('bestGear').innerHTML = data.bestGear;
+    document.getElementById('bestGear').innerHTML = data.bestGear;
 
     document.getElementById('PrincipalMessage').innerHTML = data.message;
 

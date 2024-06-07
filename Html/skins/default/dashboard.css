@@ -2,14 +2,14 @@
     CSS naming convention:
 
     - Dashboard core script maps all telemetry data properties to respective class names,
-      so truck's speed will be .truck-speed and current gear is .truck-gear
+      so truck's speed will be .truck-speed and current gear is .shifter-gear
       (see complete reference in Telemetry.md markdown file).
     - All boolean telemetry properties will have a special ".yes" class added
       when the value is true (will be removed if value is false).
     - When dashboard core script updates DOM it will always add
       data-value attribute containing current value, so you
       can use it to have custom css selectors based on the actual data
-      (for example, this skin uses .truck-gear[data-value="N"] to define
+      (for example, this skin uses .shifter-gear[data-value="N"] to define
       different style for neutral or reverse gear, see below).
 
     For more information go to home page: https://github.com/Funbit/ets2-telemetry-server
@@ -116,7 +116,7 @@ body {
   height: 66px;
   text-align: right;
 }
-.truck-gear {
+.shifter-gear {
   color: #35b32e;
   font-family: Courier New, Courier, monospace;
   font-weight: bold;
@@ -128,10 +128,10 @@ body {
   height: 100px;
   text-align: center;
 }
-.truck-gear[data-value="N"] {
+.shifter-gear[data-value="N"] {
   color: #2c8a26;
 }
-.truck-gear[data-value="R"] {
+.shifter-gear[data-value*="R"] {
   color: #ddff00;
 }
 .truck-odometer {
@@ -261,7 +261,7 @@ body {
 ._jobIncome {
   color: #5dd954;
 }
-.truck-gear,
+.shifter-gear,
 .truck-blinkerLeftActive,
 .truck-blinkerRightActive,
 .truck-cruiseControlOn,
@@ -288,7 +288,7 @@ body {
 .dashboard.game-connected.yes .truck-lightsBeamHighOn,
 .dashboard.game-connected.yes .truck-lightsBeamLowOn,
 .dashboard.game-connected.yes .truck-lightsParkingOn,
-.dashboard.game-connected.yes .truck-gear,
+.dashboard.game-connected.yes .shifter-gear,
 .dashboard.game-connected.yes ._truckWearInfo,
 .dashboard.game-connected.yes ._cargoDamageInfo,
 .dashboard.game-connected.yes ._trailerWearInfo,

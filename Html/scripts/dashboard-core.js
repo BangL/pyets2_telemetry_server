@@ -42,11 +42,11 @@
                     this.cruiseControlSpeed = 0;
                     this.cruiseControlOn = false;
                     this.odometer = 0;
-                    this.gear = 0;
-                    this.displayedGear = 0;
-                    this.forwardGears = 0;
-                    this.reverseGears = 0;
-                    this.shifterType = "";
+                    //this.gear = 0; // deprecated. use shifter.gear instead.
+                    //this.displayedGear = 0; // deprecated. use shifter.displayedGear instead.
+                    //this.forwardGears = 0; // deprecated. use shifter.forwardGears instead.
+                    //this.reverseGears = 0; // deprecated. use shifter.reverseGears instead.
+                    //this.shifterType = ""; // deprecated. use shifter.type instead.
                     this.engineRpm = 0;
                     this.engineRpmMax = 0;
                     this.fuel = 0;
@@ -67,8 +67,8 @@
                     this.gameThrottle = 0;
                     this.gameBrake = 0;
                     this.gameClutch = 0;
-                    this.shifterSlot = 0;
-                    this.shifterToggle = 0;
+                    //this.shifterSlot = 0; // deprecated. use shifter.slot instead.
+                    //this.shifterToggle = 0; // ???
                     this.engineOn = false;
                     this.electricOn = false;
                     this.wipersOn = false;
@@ -79,7 +79,7 @@
                     this.brakeTemperature = 0;
                     this.adblue = 0;
                     this.adblueCapacity = 0;
-                    //this.adblueAverageConsumpton = 0;
+                    //this.adblueAverageConsumpton = 0; // Removed in SDK 1.9
                     this.adblueWarningOn = false;
                     this.airPressure = 0;
                     this.airPressureWarningOn = false;
@@ -143,8 +143,10 @@
                     this.trailerNumber = 0;
                     this.attached = false;
                     this.present = false;
-                    this.id = "";
-                    this.name = "";
+                    this.id = ""; // deprecated, use cargo.cargoId instead
+                    this.name = ""; // deprecated, use cargo.cargo instead
+                    // this.mass  // deprecated, use cargo.mass instead
+                    // this.wear  // deprecated, use wearChassis and wearBody instead
                     this.wearWheels = 0;
                     this.wearChassis = 0;
                     this.wearBody = 0;
@@ -163,6 +165,36 @@
                     this.wheels = {};
                 }
                 return Ets2Trailer;
+            })();
+
+            var Ets2Shifter = (function () {
+                function Ets2Shifter() {
+                    this.type = "";
+                    this.forwardGears = 0;
+                    this.forwardGearNames = {};
+                    this.reverseGears = 0;
+                    this.reverseGearNames = {};
+                    this.differentialRatio = 0;
+                    this.forwardGearRatios = {};
+                    this.reverseGearRatios = {};
+                    this.tyreCircumference = 0;
+                    this.forwardSpeedAt1500Rpm = {};
+                    this.reverseSpeedAt1500Rpm = {};
+                    this.forwardRpmAtCurrentSpeed = {};
+                    this.reverseRpmAtCurrentSpeed = {};
+                    this.selectorCount = 0;
+                    this.slotCount = 0;
+                    // this.slots = {}; # IEts2ShifterSlot // TODO ?
+                    this.gear = 0;
+                    this.displayedGear = 0;
+                    this.displayedGearName = "N";
+                    // this.gearRatio = 0; // TODO ?
+                    this.slot = 0;
+                    // this.selector = 0; // TODO ?
+                    this.bestGear = 0;
+                    this.bestGearName = "N";
+                }
+                return Ets2Shifter;
             })();
 
             var Ets2Navigation = (function () {
@@ -257,6 +289,7 @@
                 function Ets2TelemetryData() {
                     this.game = new Ets2Game();
                     this.truck = new Ets2Truck();
+                    this.shifter = new Ets2Shifter();
                     this.cargo = new Ets2Cargo();
                     this.job = new Ets2Job();
                     this.navigation = new Ets2Navigation();

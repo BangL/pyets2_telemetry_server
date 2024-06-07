@@ -40,23 +40,14 @@ Funbit.Ets.Telemetry.Dashboard.prototype.initialize = function (skinConfig, util
         $('.dashboard').css('width', dashboardWidth);
         $('.dashboard').css('height', dashboardHeight);
 
-        var a = 0;
         var b = 0;
         var c = 0;
         var d = 0;
         var e = 0;
-        var $noticeShifter = $('._noticeShifter');
         var $noticeDial = $('._noticeDial');
         var $noticeSpeed = $('._noticeSpeed');
         var $switchButton = $('._switchButton');
         var $bigDial = $('._bigDial');
-        $('._switchShifter').click(function() {
-            $('._displayedGearD').toggle();
-            $('._displayedGearH').toggle();
-            a = (a + 1) % $noticeShifter.length;
-            $noticeShifter.hide(0).eq(a).show(0);
-            $noticeShifter.delay(3000).hide(0);
-        });
         $('._switchDial').click(function() {
             b = (b + 1) % $switchButton.length;
             c = (c + 1) % $bigDial.length;
@@ -117,139 +108,15 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     data._cruiseControlKMH = Math.round(data.truck.cruiseControlSpeed);
     data._cruiseControlMPH = Math.round(data.truck.cruiseControlSpeed * 0.621371192);
     
-    data._shifterType = data.truck.shifterType == 'automatic' ? 'A'
-                      : data.truck.shifterType == 'manual' ? 'M'
-                      : data.truck.shifterType == 'hshifter' ? ''
+    data._shifterType = data.shifter.type == 'automatic' ? 'A'
+                      : data.shifter.type == 'manual' ? 'M'
+                      : data.shifter.type == 'hshifter' ? ''
                       : '';
     data._hShifterOn  = data._shifterType == '';
-
-    data.truck.gear = data.truck.displayedGear;
-
-    if (data.truck.forwardGears == 18 && data.truck.reverseGears == 4) {
-        data._displayedGearH = data.truck.gear  > 17 ? '8H'  : data.truck.gear > 16 ? '8L'
-                             : data.truck.gear  > 15 ? '7H'  : data.truck.gear > 14 ? '7L'
-                             : data.truck.gear  > 13 ? '6H'  : data.truck.gear > 12 ? '6L'
-                             : data.truck.gear  > 11 ? '5H'  : data.truck.gear > 10 ? '5L'
-                             : data.truck.gear  >  9 ? '4H'  : data.truck.gear >  8 ? '4L'
-                             : data.truck.gear  >  7 ? '3H'  : data.truck.gear >  6 ? '3L'
-                             : data.truck.gear  >  5 ? '2H'  : data.truck.gear >  4 ? '2L'
-                             : data.truck.gear  >  3 ? '1H'  : data.truck.gear >  2 ? '1L'
-                             : data.truck.gear  >  1 ? 'LH'  : data.truck.gear >  0 ? 'LL'
-                             : (data.truck.gear < -3 ? 'R2H' : data.truck.gear < -2 ? 'R2L'
-                             : data.truck.gear  < -1 ? 'R1H' : data.truck.gear <  0 ? 'R1L'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 13 && data.truck.reverseGears == 3) {
-        data._displayedGearH = data.truck.gear  > 12 ? '8H' : data.truck.gear > 11 ? '8L'
-                             : data.truck.gear  > 10 ? '7H' : data.truck.gear >  9 ? '7L'
-                             : data.truck.gear  >  8 ? '6H' : data.truck.gear >  7 ? '6L'
-                             : data.truck.gear  >  6 ? '5H' : data.truck.gear >  5 ? '5L'
-                             : data.truck.gear  >  1 ? '' + Math.abs(data.truck.gear - 1)
-                             : data.truck.gear  >  0 ? 'L'
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear <  0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 10 && data.truck.reverseGears == 2) {
-        data._displayedGearH = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear < 0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 16 && data.truck.reverseGears == 2) {
-        data._displayedGearH = data.truck.gear  > 15 ? '8H' : data.truck.gear > 14 ? '8L'
-                             : data.truck.gear  > 13 ? '7H' : data.truck.gear > 12 ? '7L'
-                             : data.truck.gear  > 11 ? '6H' : data.truck.gear > 10 ? '6L'
-                             : data.truck.gear  >  9 ? '5H' : data.truck.gear >  8 ? '5L'
-                             : data.truck.gear  >  7 ? '4H' : data.truck.gear >  6 ? '4L'
-                             : data.truck.gear  >  5 ? '3H' : data.truck.gear >  4 ? '3L'
-                             : data.truck.gear  >  3 ? '2H' : data.truck.gear >  2 ? '2L'
-                             : data.truck.gear  >  1 ? '1H' : data.truck.gear >  0 ? '1L'
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear <  0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 12 && data.truck.reverseGears == 2) {
-        data._displayedGearH = data.truck.gear  > 11 ? '6H' : data.truck.gear > 10 ? '6L'
-                             : data.truck.gear  >  9 ? '5H' : data.truck.gear >  8 ? '5L'
-                             : data.truck.gear  >  7 ? '4H' : data.truck.gear >  6 ? '4L'
-                             : data.truck.gear  >  5 ? '3H' : data.truck.gear >  4 ? '3L'
-                             : data.truck.gear  >  3 ? '2H' : data.truck.gear >  2 ? '2L'
-                             : data.truck.gear  >  1 ? '1H' : data.truck.gear >  0 ? '1L'
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear <  0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 12 && data.truck.reverseGears == 4) {
-        data._displayedGearH = data.truck.gear  > 11 ? '6H' : data.truck.gear > 10 ? '6L'
-                             : data.truck.gear  >  9 ? '5H' : data.truck.gear >  8 ? '5L'
-                             : data.truck.gear  >  7 ? '4H' : data.truck.gear >  6 ? '4L'
-                             : data.truck.gear  >  5 ? '3H' : data.truck.gear >  4 ? '3L'
-                             : data.truck.gear  >  3 ? '2H' : data.truck.gear >  2 ? '2L'
-                             : data.truck.gear  >  1 ? '1H' : data.truck.gear >  0 ? '1L'
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear <  0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 14 && data.truck.reverseGears == 2) {
-        data._displayedGearH = data.truck.gear  > 13 ? '6H' : data.truck.gear > 12 ? '6L'
-                             : data.truck.gear  > 11 ? '5H' : data.truck.gear > 10 ? '5L'
-                             : data.truck.gear  >  9 ? '4H' : data.truck.gear >  8 ? '4L'
-                             : data.truck.gear  >  7 ? '3H' : data.truck.gear >  6 ? '3L'
-                             : data.truck.gear  >  5 ? '2H' : data.truck.gear >  4 ? '2L'
-                             : data.truck.gear  >  3 ? '1H' : data.truck.gear >  2 ? '1L'
-                             : data.truck.gear  >  1 ? 'C2' : data.truck.gear >  0 ? 'C1'
-                             : (data.truck.gear < -1 ? 'RH' : data.truck.gear <  0 ? 'RL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  2 ? '' + Math.abs(data.truck.gear - 2)
-                             : data.truck.gear  >  0 ? 'C' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 14 && data.truck.reverseGears == 4) {
-        data._displayedGearH = data.truck.gear  > 13 ? '6H'  : data.truck.gear > 12 ? '6L'
-                             : data.truck.gear  > 11 ? '5H'  : data.truck.gear > 10 ? '5L'
-                             : data.truck.gear  >  9 ? '4H'  : data.truck.gear >  8 ? '4L'
-                             : data.truck.gear  >  7 ? '3H'  : data.truck.gear >  6 ? '3L'
-                             : data.truck.gear  >  5 ? '2H'  : data.truck.gear >  4 ? '2L'
-                             : data.truck.gear  >  3 ? '1H'  : data.truck.gear >  2 ? '1L'
-                             : data.truck.gear  >  1 ? 'C2'  : data.truck.gear >  0 ? 'C1'
-                             : (data.truck.gear < -3 ? 'RHH' : data.truck.gear < -2 ? 'RHL'
-                             : data.truck.gear  < -1 ? 'RLH' : data.truck.gear <  0 ? 'RLL'
-                             : 'N');
-        data._displayedGearD = data.truck.gear  >  2 ? '' + Math.abs(data.truck.gear - 2)
-                             : data.truck.gear  >  0 ? 'C' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-    } else if (data.truck.forwardGears == 14 && data.truck.reverseGears == 5) {
-        data._displayedGearH = data.truck.gear  >  2 ? '' + Math.abs(data.truck.gear - 2)
-                             : data.truck.gear  >  0 ? 'C' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-        data._displayedGearD = data._displayedGearH;
-    } else if (data.truck.forwardGears == 6 && data.truck.reverseGears == 1) {
-        data._displayedGearH = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R'
-                             : 'N');
-        data._displayedGearD = data._displayedGearH;
-    } else {
-        data._displayedGearH = data.truck.gear  >  0 ? '' + data.truck.gear
-                             : (data.truck.gear <  0 ? 'R' + Math.abs(data.truck.gear)
-                             : 'N');
-        data._displayedGearD = data._displayedGearH;
-    }
 
     var language = navigator.language.substring(0, 2);
 
     if (language == 'de') {
-        data._gearIndicatorA   = 'Automatikgetriebe Ganganzeige';
-        data._gearIndicatorM   = 'Schaltgetriebe Ganganzeige';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Längeneinheiten: Kilometer';
@@ -284,8 +151,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'fr') {
-        data._gearIndicatorA   = 'Automatic Gear Indicator';
-        data._gearIndicatorM   = 'Manual Gear Indicator';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Unités de distance : Kilomètres';
@@ -320,8 +185,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsFR(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'it') {
-        data._gearIndicatorA   = 'Indicatore cambio automatico';
-        data._gearIndicatorM   = 'Indicatore cambio manuale';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Unità - lunghezza: Chilometri';
@@ -356,8 +219,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'pl') {
-        data._gearIndicatorA   = 'Wskaźnik automatycznej skrzyni biegów';
-        data._gearIndicatorM   = 'Wskaźnik manualnej skrzyni biegów';
         data._speedometerL     = 'Prędkościomierz (L) Tachometr (R)';
         data._speedometerR     = 'Tachometr (L) Prędkościomierz (R)';
         data._kilometres       = 'Jednostki długości: kilometry';
@@ -392,8 +253,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsFR(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'cz') {
-        data._gearIndicatorA   = 'Indikátor automatické převodovky';
-        data._gearIndicatorM   = 'Ukazatel manuální převodovky';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Jednotky délky: kilometry';
@@ -428,8 +287,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsFR(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'no') {
-        data._gearIndicatorA   = 'Automatisk girkasse girindikator';
-        data._gearIndicatorM   = 'Manuell girkasse Girindikator';
         data._speedometerL     = 'Speedometer (L) Turteller (R)';
         data._speedometerR     = 'Turteller (L) Speedometer (R)';
         data._kilometres       = 'Avstandsenheter: kilometer';
@@ -464,8 +321,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsFR(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'sv') {
-        data._gearIndicatorA   = 'Automatisk växellåda kugghjuls indikator';
-        data._gearIndicatorM   = 'Manuell växellåda kugghjuls indikator';
         data._speedometerL     = 'Hastighetsmätare (L) Varvräknare (R)';
         data._speedometerR     = 'Varvräknare (L) Hastighetsmätare (R)';
         data._kilometres       = 'Längdenheter: kilometer';
@@ -500,8 +355,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'da') {
-        data._gearIndicatorA   = 'Automatisk gearkasse Gearindikator';
-        data._gearIndicatorM   = 'Manuel gearkasse Gearindikator';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Længdeenheder: kilometer';
@@ -536,8 +389,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'tr') {
-        data._gearIndicatorA   = 'Otomatik Şanzıman Dişli Göstergesi';
-        data._gearIndicatorM   = 'Manuel Şanzıman Dişli Göstergesi';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Uzunluk Birimleri: Kilometre';
@@ -572,8 +423,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'nl') {
-        data._gearIndicatorA   = 'Automatische versnellingsindicator';
-        data._gearIndicatorM   = 'Handmatige versnellingsindicator';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Lengte eenheden: kilometers';
@@ -608,8 +457,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'pt' && navigator.language.substring(3, 5) == 'BR') {
-        data._gearIndicatorA   = 'Indicador Automático de Marchas';
-        data._gearIndicatorM   = 'Indicador Manual de Marchas';
         data._speedometerL     = 'Velocímetro (E) Tacômetro (D)';
         data._speedometerR     = 'Tacômetro (E) Velocímetro (D)';
         data._kilometres       = 'Unidades de comprimento: quilômetros';
@@ -644,8 +491,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'pt') {
-        data._gearIndicatorA   = 'Indicador Automático de Velocidades';
-        data._gearIndicatorM   = 'Indicador Manual de Velocidades';
         data._speedometerL     = 'Velocímetro (E) Tacómetro (D)';
         data._speedometerR     = 'Tacómetro (E) Velocímetro (D)';
         data._kilometres       = 'Unidades de distância: Quilómetros';
@@ -680,8 +525,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousandsDE(Math.floor(data.truck.odometer * 0.621371192)) + ' mi'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'zh' && (navigator.language.substring(3, 5) == 'TW' || navigator.language.substring(3, 5) == 'HK')) {
-        data._gearIndicatorA   = '自排變速箱擋位指示器';
-        data._gearIndicatorM   = '手排變速箱擋位指示器';
         data._speedometerL     = '時速表 (左) 轉速表 (右)';
         data._speedometerR     = '轉速表 (左) 時速表 (右)';
         data._kilometres       = '長度單位: 公里';
@@ -716,8 +559,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousands(Math.floor(data.truck.odometer * 0.621371192)) + ' 哩'
                           : data.truck.make + ' ' + data.truck.model;
     } else if (language == 'zh') {
-        data._gearIndicatorA   = '自动变速箱挡位指示器';
-        data._gearIndicatorM   = '手动变速箱挡位指示器';
         data._speedometerL     = '时速表 (左) 转速表 (右)';
         data._speedometerR     = '转速表 (左) 时速表 (右)';
         data._kilometres       = '长度单位: 公里';
@@ -752,8 +593,6 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
                           ? this.numberToThousands(Math.floor(data.truck.odometer * 0.621371192)) + ' 英里'
                           : data.truck.make + ' ' + data.truck.model;
     } else {
-        data._gearIndicatorA   = 'Automatic Gear Indicator';
-        data._gearIndicatorM   = 'Manual Gear Indicator';
         data._speedometerL     = 'Speedometer (L) Tachometer (R)';
         data._speedometerR     = 'Tachometer (L) Speedometer (R)';
         data._kilometres       = 'Length Units: Kilometres';

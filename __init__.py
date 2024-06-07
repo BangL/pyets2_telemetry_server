@@ -28,7 +28,7 @@ import threading
 from inspect import isfunction
 from sre_compile import isstring
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any, Callable, Type, TypeVar
 
 from requests import patch
 
@@ -53,6 +53,7 @@ server_thread_: threading.Thread
 game_time_: datetime = GAME_TIME_BASE
 delivery_time_: datetime = GAME_TIME_BASE
 onJob_: bool = False
+speed_mph_: float = 0.0
 
 # NOTE: new_data indicator only works well with 1 client.
 # Need to track connection/session ids to handle multiple clients
@@ -77,9 +78,16 @@ def push_shared_value(json_path, callback: Callable):
         if i == path_len - 1:
             _active_dict[key] = callback(_active_dict.get(key))
             continue
-        # if _active_dict.get(key) == None:
-        #     _active_dict[key] = {}
         _active_dict = _active_dict.get(key)
+
+def get_shared_value(json_path, fallback = None):
+    path_len = len(json_path)
+    _active_dict = shared_data_['telemetry_data']
+    for i, key in enumerate(json_path):
+        if i == path_len - 1:
+            return _active_dict.get(key)
+        _active_dict = _active_dict.get(key)
+    return fallback
 
 def recount_trailers():
     connected = 0
@@ -88,6 +96,132 @@ def recount_trailers():
             connected += 1
     shared_data_['telemetry_data']['trailerCount'] = connected
     shared_data_['telemetry_data']['trailer'] = shared_data_['telemetry_data']['trailers'][0] # rebind first trailer, just in case
+
+def update_slot_count():
+    slotCount = 1
+    if get_shared_value(['shifter', 'type'], SCS_SHIFTER_TYPE_automatic) == SCS_SHIFTER_TYPE_hshifter:
+        positions = shared_data_['telemetry_data']['shifter']['_handlePositions']
+        if len(positions) > 0:
+            slotCount = max(enumerate(positions))
+    set_shared_value(['shifter', 'slotCount'], slotCount)
+
+def update_tyre_circumference():
+    tyreCircumference = 0.0
+    wheelCount = get_shared_value(['truck', 'wheelCount'], 0)
+    if wheelCount > 2:
+        wheel_index = 2
+        if wheelCount > 4 and get_shared_value(['truck', 'wheels', 4, 'powered'], False):
+            wheel_index = 4
+        tyreCircumference = get_shared_value(['truck', 'wheels', wheel_index, 'radius'], 0.0) * 2 * math.pi
+    set_shared_value(['shifter', 'tyreCircumference'], tyreCircumference)
+
+def update_gear_names():
+    fwd_gears = get_shared_value(['shifter', 'forwardGears'], 0)
+    rev_gears = get_shared_value(['shifter', 'reverseGears'], 0)
+    shifter_type = get_shared_value(['shifter', 'type'], SCS_SHIFTER_TYPE_automatic)
+    is_ets2 = shared_data_['telemetry_data']['game']['gameName'] == "ETS2"
+
+    fwd_names = ["N"]
+    rev_names = ["N"]
+
+    if shifter_type == SCS_SHIFTER_TYPE_hshifter:
+        if fwd_gears == 18:
+            fwd_names = ["N", "CL", "CH", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        elif fwd_gears == 16:
+            fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        elif fwd_gears == 14:
+                fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H"] if is_ets2 else \
+                                       ["N", "CL", "CH", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        elif fwd_gears == 13:
+            fwd_names = ["N", "L", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        elif fwd_gears == 12:
+            fwd_names = ["N", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+
+        if rev_gears == 4:
+            rev_names = ["N", "R1L", "R1H", "R2L", "R2H"]
+        elif rev_gears == 3:
+            rev_names = ["N", "RL", "RH", "RO"]
+        elif rev_gears == 2:
+            rev_names = ["N", "RL", "RH"]
+
+    if len(fwd_names) == 1:
+        for i in range(1, fwd_gears):
+            fwd_names.append(str(i))
+
+    if len(rev_names) == 1:
+        if rev_gears == 1:
+            rev_names.append("R")
+        elif rev_gears > 1:
+            for i in range(1, rev_gears):
+                fwd_names.append("R" + str(i))
+
+    set_shared_value(['shifter', 'forwardGearNames'], to_int_dict(str, fwd_names))
+    set_shared_value(['shifter', 'reverseGearNames'], to_int_dict(str, rev_names))
+
+def update_gear_name(value: int):
+    fwd_gear_names = shared_data_['telemetry_data']['shifter']['forwardGearNames']
+    rev_gear_names = shared_data_['telemetry_data']['shifter']['reverseGearNames']
+
+    gear_name = "N"
+    if value != 0 and len(fwd_gear_names) > 1 and len(rev_gear_names) > 1:
+        gear_names = fwd_gear_names if value > 0 else rev_gear_names
+        gear_name = gear_names[abs(value)]
+
+    set_shared_value(['shifter', 'displayedGearName'], gear_name)
+
+def update_shifter_speeds():
+    fwd_speeds: dict[int, int] = {0: 0}
+    rev_speeds: dict[int, int] = {0: 0}
+    fwd_rpm: dict[int, int] = {0: 0}
+    rev_rpm: dict[int, int] = {0: 0}
+    best_gear = 0
+    best_gear_name = 'N'
+
+    fwd_ratios = shared_data_['telemetry_data']['shifter']['forwardGearRatios']
+    rev_ratios = shared_data_['telemetry_data']['shifter']['reverseGearRatios']
+    fwd_gears = get_shared_value(['shifter', 'forwardGears'], 0)
+    rev_gears = get_shared_value(['shifter', 'reverseGears'], 0)
+    tyreCircumference = get_shared_value(['shifter', 'tyreCircumference'], 0.0)
+    differentialRatio = get_shared_value(['shifter', 'differentialRatio'], 0.0)
+
+    if len(fwd_ratios) > 0 and len(rev_ratios) > 0 and fwd_gears > 0 and rev_gears > 0 and tyreCircumference > 0.0 and differentialRatio > 0.0:
+
+        for i in range(1, fwd_gears):
+            if len(fwd_ratios) > i:
+                fwd_speeds[i] = round(90 * tyreCircumference / differentialRatio * fwd_ratios[i - 1])
+                fwd_rpm[i] = round(60 * abs(speed_mph_) * differentialRatio * fwd_ratios[i - 1] / tyreCircumference)
+
+        for i in range(1, rev_gears):
+            if len(rev_ratios) > i:
+                rev_speeds[i] = round(90 * tyreCircumference / differentialRatio * rev_ratios[i - 1])
+                rev_rpm[i] = round(60 * abs(speed_mph_) * differentialRatio * rev_ratios[i - 1] / tyreCircumference)
+
+        gap = 1500
+        check = 1300
+        speeds = fwd_rpm if speed_mph_ > 0 else rev_rpm
+        for i in range(1, len(speeds)):
+            if speeds[i] < 0:
+                pos = abs(speeds[i] + check)
+                if gap > pos:
+                    best_gear = -i
+                    gap = pos
+            else:
+                neg = abs(speeds[i] - check)
+                if gap < neg:
+                    best_gear = i
+                    gap = neg
+
+        if best_gear < 0:
+            best_gear_name = shared_data_['telemetry_data']['shifter']['reverseGearNames'][abs(best_gear)]
+        else:
+            best_gear_name = shared_data_['telemetry_data']['shifter']['forwardGearNames'][best_gear]
+
+    set_shared_value(['shifter', 'forwardSpeedAt1500Rpm'], fwd_speeds)
+    set_shared_value(['shifter', 'reverseSpeedAt1500Rpm'], rev_speeds)
+    set_shared_value(['shifter', 'forwardRpmAtCurrentSpeed'], fwd_rpm)
+    set_shared_value(['shifter', 'reverseRpmAtCurrentSpeed'], rev_rpm)
+    set_shared_value(['shifter', 'bestGear'], best_gear)
+    set_shared_value(['shifter', 'bestGearName'], best_gear_name)
 
 def shared_data_notify():
     shared_data_['new_data'] = True
@@ -145,7 +279,7 @@ def telemetry_init(version, telemetry):
     start_server()
 
 def channel_cb(channel: ScsChannel, index: int, value, context):
-    global game_time_
+    global game_time_, speed_mph_
 
     with shared_data_['condition']:
         something_changed = False
@@ -161,17 +295,26 @@ def channel_cb(channel: ScsChannel, index: int, value, context):
                 remaining_time = delivery_time_ - game_time_
             set_shared_value(['job', 'remainingTime'], json_time(GAME_TIME_BASE + remaining_time))
             something_changed = True
+
         elif channel == SCS_TELEMETRY_TRUCK_CHANNEL_dashboard_backlight:
             set_shared_value(['truck', 'lightsDashboardOn'], value > 0)
             something_changed = True
+
         elif channel == SCS_TELEMETRY_TRUCK_CHANNEL_cruise_control:
             set_shared_value(['truck', 'cruiseControlOn'], value > 0)
             something_changed = True
 
+        elif channel == SCS_TELEMETRY_TRUCK_CHANNEL_displayed_gear:
+            update_gear_name(value)
+            something_changed = True
+
+        elif channel == SCS_TELEMETRY_TRUCK_CHANNEL_speed:
+            speed_mph_ = value
+
         channel_config_name = channel.name
 
         # disect indexed events
-        indexed_pattern = r'^\w+\.(\d)\.[\.\w]+$'
+        indexed_pattern = r'^\w+\.(\d+)\.[\.\w]+$'
         indexed_match = re.match(indexed_pattern, channel.name)
         channel_index = None
         if indexed_match and channel.parent:
@@ -206,9 +349,10 @@ def channel_cb(channel: ScsChannel, index: int, value, context):
                 trailers_changed = True
             json_path.append(channel_config[1])
             # indexed values
-            if sub and channel.indexed:
+            if channel.indexed:
                 json_path.append(index)
-                json_path.append(sub)
+                if sub:
+                    json_path.append(sub)
             # set value
             set_shared_value(json_path, value)
             something_changed = True
@@ -229,7 +373,7 @@ def event_cb(event, event_info, context):
                 return
 
             is_job = event_id == SCS_TELEMETRY_CONFIG_job
-            trailer_match = re.match(r'^trailer\.(\d)$', event_id)
+            trailer_match = re.match(r'^trailer\.(\d+)$', event_id)
             if trailer_match:
                 event_map = CONFIG_EVENT_MAP.get(SCS_TELEMETRY_CONFIG_trailer)
             else:
@@ -253,7 +397,7 @@ def event_cb(event, event_info, context):
                             elif isstring(p3): # index sub
                                 sub = str(p3)
 
-                        if name == SCS_TELEMETRY_CONFIG_ATTRIBUTE_delivery_time:
+                        if name == SCS_TELEMETRY_CONFIG_ATTRIBUTE_delivery_time.name:
                             # Remaining time will change as game time
                             # progresses, so let's save delivery time
                             # and calculate remaining time when game
@@ -265,17 +409,33 @@ def event_cb(event, event_info, context):
                         # indexed trailer
                         if trailer_match:
                             json_path.append(int(trailer_match.group(1)))
-                            if key == SCS_TELEMETRY_CONFIG_ATTRIBUTE_id:
+                            if key == SCS_TELEMETRY_CONFIG_ATTRIBUTE_id.name:
                                 set_shared_value(json_path + ['present'], value != None and value != '')
 
                         json_path.append(key)
 
                         # indexed value
-                        if sub:
+                        if SCS_ATTRIBUTES[name].indexed:
                             json_path.append(index)
-                            json_path.append(sub)
+                            if sub:
+                                json_path.append(sub)
 
                         set_shared_value(json_path, value)
+
+                        if (name in [SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_handle_position.name,
+                                     SCS_TELEMETRY_CONFIG_ATTRIBUTE_shifter_type.name]):
+                            update_slot_count()
+
+                        if (event_id == SCS_TELEMETRY_CONFIG_truck) and name in [
+                                SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_count.name,
+                                SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_radius.name,
+                                SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_powered.name]:
+                            update_tyre_circumference()
+
+                        if (name in [SCS_TELEMETRY_CONFIG_ATTRIBUTE_forward_gear_count.name,
+                                     SCS_TELEMETRY_CONFIG_ATTRIBUTE_reverse_gear_count.name,
+                                     SCS_TELEMETRY_CONFIG_ATTRIBUTE_shifter_type.name]):
+                            update_gear_names()
 
                 if is_job and is_empty and onJob_:
                     onJob_ = False
@@ -285,6 +445,8 @@ def event_cb(event, event_info, context):
 
                 if trailer_match:
                     recount_trailers()
+
+                update_shifter_speeds()
 
                 shared_data_notify()
     elif event == SCS_TELEMETRY_EVENT_started:
@@ -346,10 +508,24 @@ def telemetry_shutdown():
 def clone(blueprint) -> Any:
     return copy.deepcopy(blueprint)
 
-def clone_array(blueprint, count) -> dict[int, Any]:
+def clone_dict(blueprint, count) -> dict[int, Any]:
     result: dict[int, Any] = {}
     for i in range(0, count):
         result[i] = (clone(blueprint))
+    return result
+
+T = TypeVar('T', bound=Any)
+
+def make_dict(typ: Type[T]) -> dict[int, T]:
+    result: dict[int, T] = {}
+    return result
+
+def to_int_dict(typ: Type[T], s: list[T]) -> dict[int, T]:
+    result = make_dict(typ)
+    i = 0
+    for v in s:
+        result[i] = v
+        i += 1
     return result
 
 def init_shared_data():
@@ -400,8 +576,10 @@ def init_shared_data():
         'chainType': '',
         'placement': clone(bp_placement),
         'wheelCount': 0,
-        'wheels': clone_array(bp_wheel, max_wheels),
+        'wheels': clone_dict(bp_wheel, max_wheels),
     }
+
+    # TODO ?
     # bp_shifter_selector = {
     #     'selector': 0,
     #     'gear': 0,
@@ -409,11 +587,11 @@ def init_shared_data():
     # }
     # bp_shifter_slot = {
     #     'slot': 0,
-    #     'selectors': clone_array(bp_shifter_selector, 0),
+    #     'selectors': clone_dict(bp_shifter_selector, 0),
     # }
 
     # compose data
-    trailers = clone_array(bp_trailer, max_trailers)
+    trailers = clone_dict(bp_trailer, max_trailers)
     shared_data_['new_data'] = True
     shared_data_['telemetry_data'] = {
         'game': {
@@ -435,11 +613,11 @@ def init_shared_data():
             'cruiseControlSpeed': 0.0,
             'cruiseControlOn': False,
             'odometer': 0.0,
-            'gear': 0,
-            'displayedGear': 0,
-            'forwardGears': 12,
-            'reverseGears': 1,
-            'shifterType': SCS_SHIFTER_TYPE_automatic,
+            # 'gear': 0, # deprecated. use shifter.gear instead.
+            # 'displayedGear': 0, # deprecated. use shifter.displayedGear instead.
+            # 'forwardGears': 12, # deprecated. use shifter.forwardGears instead.
+            # 'reverseGears': 1, # deprecated. use shifter.reverseGears instead.
+            # 'shifterType': SCS_SHIFTER_TYPE_automatic, # deprecated. use shifter.type instead.
             'engineRpm': 0.0,
             'engineRpmMax': 2500.0,
             'fuel': 0.0,
@@ -460,7 +638,7 @@ def init_shared_data():
             'gameThrottle': 0.0,
             'gameBrake': 0.0,
             'gameClutch': 0.0,
-            'shifterSlot': 0,
+            # 'shifterSlot': 0, # deprecated. use shifter.slot instead.
             'engineOn': False,
             'electricOn': False,
             'wipersOn': False,
@@ -512,34 +690,36 @@ def init_shared_data():
             'licensePlateCountryId': '',
             'licensePlateCountry': '',
             'wheelCount': 0,
-            'wheels': clone_array(bp_wheel, max_wheels),
+            'wheels': clone_dict(bp_wheel, max_wheels),
         },
-        # 'shifter': {
-        #     'type': '',
-        #     'forwardGears': 0,
-        #     'forwardGearNames': [], # string
-        #     'reverseGears': 0,
-        #     'reverseGearNames': [], # string
-        #     'differentialRatio': 0.0,
-        #     'forwardGearRatios': [], # float
-        #     'reverseGearRatios': [], # float
-        #     'tyreCircumference': 0.0,
-        #     'forwardSpeedAt1500Rpm': [], # int
-        #     'reverseSpeedAt1500Rpm': [], # int
-        #     'forwardRpmAtCurrentSpeed': [], # int
-        #     'reverseRpmAtCurrentSpeed': [], # int
-        #     'selectorCount': 0,
-        #     'slotCount': 0,
-        #     'slots': clone_array(bp_shifter_slot, 0), # IEts2ShifterSlot
-        #     'gear': 0,
-        #     'displayedGear': 0,
-        #     'displayedGearName': '',
-        #     'gearRatio': 0.0,
-        #     'slot': 0,
-        #     'selector': 0,
-        #     'bestGear': 0,
-        #     'bestGearName': '',
-        # },
+        'shifter': {
+            'type': SCS_SHIFTER_TYPE_automatic,
+            'forwardGears': 0,
+            'forwardGearNames': make_dict(str), # str
+            'reverseGears': 0,
+            'reverseGearNames': make_dict(str), # str
+            'differentialRatio': 0.0,
+            'forwardGearRatios': make_dict(float), # float
+            'reverseGearRatios': make_dict(float), # float
+            'tyreCircumference': 0.0,
+            'forwardSpeedAt1500Rpm': make_dict(int), # int
+            'reverseSpeedAt1500Rpm': make_dict(int), # int
+            'forwardRpmAtCurrentSpeed': make_dict(int), # int
+            'reverseRpmAtCurrentSpeed': make_dict(int), # int
+            'selectorCount': 0,
+            'slotCount': 0,
+        #     'slots': clone_dict(bp_shifter_slot, 0), # IEts2ShifterSlot # TODO ?
+            'gear': 0,
+            'displayedGear': 0,
+            'displayedGearName': 'N',
+        #     'gearRatio': 0.0, # TODO ?
+            'slot': 0,
+        #     'selector': 0, # TODO ?
+            'bestGear': 0,
+            'bestGearName': 'N',
+            '_handlePositions': make_dict(int), # int
+            '_bitMasks': make_dict(int), # int
+        },
         'trailerCount': 0,
         'trailers': trailers,
         'trailer': trailers[0],
@@ -685,21 +865,21 @@ CHANNEL_EVENT_MAP: dict[str, tuple[str, str] | tuple[str, str, str] | tuple[str,
     # SCS_TELEMETRY_TRUCK_CHANNEL_lift_axle_indicator.name,
     # SCS_TELEMETRY_TRUCK_CHANNEL_trailer_lift_axle.name,
     # SCS_TELEMETRY_TRUCK_CHANNEL_trailer_lift_axle_indicator.name,
-    SCS_TELEMETRY_TRUCK_CHANNEL_displayed_gear.name: ('truck', 'displayedGear'),
+    SCS_TELEMETRY_TRUCK_CHANNEL_displayed_gear.name: ('shifter', 'displayedGear'),
     SCS_TELEMETRY_TRUCK_CHANNEL_effective_brake.name: ('truck', 'gameBrake'),
     SCS_TELEMETRY_TRUCK_CHANNEL_effective_clutch.name: ('truck', 'gameClutch'),
     SCS_TELEMETRY_TRUCK_CHANNEL_effective_steering.name: ('truck', 'gameSteer'),
     SCS_TELEMETRY_TRUCK_CHANNEL_effective_throttle.name: ('truck', 'gameThrottle'),
     SCS_TELEMETRY_TRUCK_CHANNEL_electric_enabled.name: ('truck', 'electricOn'),
     SCS_TELEMETRY_TRUCK_CHANNEL_engine_enabled.name: ('truck', 'engineOn'),
-    SCS_TELEMETRY_TRUCK_CHANNEL_engine_gear.name: ('truck', 'gear'),
+    SCS_TELEMETRY_TRUCK_CHANNEL_engine_gear.name: ('shifter', 'gear'),
     SCS_TELEMETRY_TRUCK_CHANNEL_engine_rpm.name: ('truck', 'engineRpm'),
     SCS_TELEMETRY_TRUCK_CHANNEL_fuel_average_consumption.name: ('truck', 'fuelAverageConsumption'),
     SCS_TELEMETRY_TRUCK_CHANNEL_fuel.name: ('truck', 'fuel'),
     SCS_TELEMETRY_TRUCK_CHANNEL_fuel_warning.name: ('truck', 'fuelWarningOn'),
     # SCS_TELEMETRY_TRUCK_CHANNEL_head_offset.name,
     # SCS_TELEMETRY_TRUCK_CHANNEL_hshifter_selector.name, # indexed
-    SCS_TELEMETRY_TRUCK_CHANNEL_hshifter_slot.name: ('truck', 'shifterSlot'),
+    SCS_TELEMETRY_TRUCK_CHANNEL_hshifter_slot.name: ('shifter', 'slot', lambda v: 0 if shared_data_['telemetry_data']['shifter']['type'] != SCS_SHIFTER_TYPE_hshifter else v),
     # SCS_TELEMETRY_TRUCK_CHANNEL_input_brake.name,
     # SCS_TELEMETRY_TRUCK_CHANNEL_input_clutch.name,
     # SCS_TELEMETRY_TRUCK_CHANNEL_input_steering.name,
@@ -755,136 +935,136 @@ CHANNEL_EVENT_MAP: dict[str, tuple[str, str] | tuple[str, str, str] | tuple[str,
 CONFIG_EVENT_MAP: dict[str, dict[str, tuple[str, str] | tuple[str, str, str] | tuple[str, str, Callable]]] = {
 
     # SCS_TELEMETRY_CONFIG_substances: {
-    #     SCS_TELEMETRY_CONFIG_ATTRIBUTE_id,
+    #     SCS_TELEMETRY_CONFIG_ATTRIBUTE_id.name,
     # },
 
     SCS_TELEMETRY_CONFIG_controls: {
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_shifter_type: ('truck', 'shifterType'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_shifter_type.name: ('shifter', 'type'),
     },
 
-    #SCS_TELEMETRY_CONFIG_hshifter: {
-    #    SCS_TELEMETRY_CONFIG_ATTRIBUTE_selector_count: ('shifter', 'selectorCount'),
-    #    SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_gear:, # indexed
-    #    SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_handle_position, # indexed
-    #    SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_selectors, # indexed
-    #},
+    SCS_TELEMETRY_CONFIG_hshifter: {
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_selector_count.name: ('shifter', 'selectorCount', lambda v: 1 if shared_data_['telemetry_data']['shifter']['type'] != SCS_SHIFTER_TYPE_hshifter else math.pow(2, v)),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_gear.name:, # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_handle_position.name: ('shifter', '_handlePositions'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_slot_selectors.name: ('shifter', '_bitMasks'), # indexed
+    },
 
     SCS_TELEMETRY_CONFIG_truck: {
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand_id: ('truck', 'id'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand: ('truck', 'make'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_id,
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_name: ('truck', 'model'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_fuel_capacity: ('truck', 'fuelCapacity'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_fuel_warning_factor: ('truck', 'fuelWarningFactor'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_adblue_capacity: ('truck', 'adblueCapacity'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_adblue_warning_factor,
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_air_pressure_warning: ('truck', 'airPressureWarningValue'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_air_pressure_emergency: ('truck', 'airPressureEmergencyValue'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_oil_pressure_warning: ('truck', 'oilPressureWarningValue'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_water_temperature_warning: ('truck', 'waterTemperatureWarningValue'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_battery_voltage_warning: ('truck', 'batteryVoltageWarningValue'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_rpm_limit: ('truck', 'engineRpmMax'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_forward_gear_count: ('truck', 'forwardGears'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_reverse_gear_count: ('truck', 'reverseGears'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_retarder_step_count: ('truck', 'retarderStepCount'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cabin_position: ('truck', 'cabin'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_head_position: ('truck', 'head'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_hook_position: ('truck', 'hook'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_count: ('truck', 'wheelCount'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_position: ('truck', 'wheels', 'position'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_steerable: ('truck', 'wheels', 'steerable'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_simulated: ('truck', 'wheels', 'simulated'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_radius: ('truck', 'wheels', 'radius'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_powered: ('truck', 'wheels', 'powered'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_liftable: ('truck', 'wheels', 'liftable'), # indexed
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_differential_ratio: ('shifter', 'differentialRatio'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_forward_ratio, # indexed
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_reverse_ratio, # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate: ('truck', 'licensePlate'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country: ('truck', 'licensePlateCountry'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country_id: ('truck', 'licensePlateCountryId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand_id.name: ('truck', 'id'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand.name: ('truck', 'make'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_id.name,
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_name.name: ('truck', 'model'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_fuel_capacity.name: ('truck', 'fuelCapacity'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_fuel_warning_factor.name: ('truck', 'fuelWarningFactor'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_adblue_capacity.name: ('truck', 'adblueCapacity'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_adblue_warning_factor.name,
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_air_pressure_warning.name: ('truck', 'airPressureWarningValue'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_air_pressure_emergency.name: ('truck', 'airPressureEmergencyValue'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_oil_pressure_warning.name: ('truck', 'oilPressureWarningValue'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_water_temperature_warning.name: ('truck', 'waterTemperatureWarningValue'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_battery_voltage_warning.name: ('truck', 'batteryVoltageWarningValue'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_rpm_limit.name: ('truck', 'engineRpmMax'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_forward_gear_count.name: ('shifter', 'forwardGears'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_reverse_gear_count.name: ('shifter', 'reverseGears'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_retarder_step_count.name: ('truck', 'retarderStepCount'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cabin_position.name: ('truck', 'cabin'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_head_position.name: ('truck', 'head'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_hook_position.name: ('truck', 'hook'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_count.name: ('truck', 'wheelCount'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_position.name: ('truck', 'wheels', 'position'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_steerable.name: ('truck', 'wheels', 'steerable'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_simulated.name: ('truck', 'wheels', 'simulated'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_radius.name: ('truck', 'wheels', 'radius'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_powered.name: ('truck', 'wheels', 'powered'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_liftable.name: ('truck', 'wheels', 'liftable'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_differential_ratio.name: ('shifter', 'differentialRatio'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_forward_ratio.name: ('shifter', 'forwardGearRatios'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_reverse_ratio.name: ('shifter', 'reverseGearRatios'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate.name: ('truck', 'licensePlate'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country.name: ('truck', 'licensePlateCountry'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country_id.name: ('truck', 'licensePlateCountryId'),
     },
 
     SCS_TELEMETRY_CONFIG_trailer: {
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_id: ('trailers', 'id'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_accessory_id: ('trailers', 'cargoAccessoryId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_hook_position: ('trailers', 'hook'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_count: ('trailers', 'wheelCount'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_position: ('trailers', 'wheels', 'position'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_steerable: ('trailers', 'wheels', 'steerable'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_simulated: ('trailers', 'wheels', 'simulated'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_radius: ('trailers', 'wheels', 'radius'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_powered: ('trailers', 'wheels', 'powered'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_liftable: ('trailers', 'wheels', 'liftable'), # indexed
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_body_type: ('trailers', 'bodyType'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand_id: ('trailers', 'brandId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand: ('trailers', 'brand'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_name: ('trailers', 'name'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_chain_type: ('trailers', 'chainType'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate: ('trailers', 'licensePlate'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country: ('trailers', 'licensePlateCountry'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country_id: ('trailers', 'licensePlateCountryId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_id.name: ('trailers', 'id'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_accessory_id.name: ('trailers', 'cargoAccessoryId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_hook_position.name: ('trailers', 'hook'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_count.name: ('trailers', 'wheelCount'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_position.name: ('trailers', 'wheels', 'position'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_steerable.name: ('trailers', 'wheels', 'steerable'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_simulated.name: ('trailers', 'wheels', 'simulated'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_radius.name: ('trailers', 'wheels', 'radius'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_powered.name: ('trailers', 'wheels', 'powered'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_wheel_liftable.name: ('trailers', 'wheels', 'liftable'), # indexed
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_body_type.name: ('trailers', 'bodyType'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand_id.name: ('trailers', 'brandId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_brand.name: ('trailers', 'brand'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_name.name: ('trailers', 'name'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_chain_type.name: ('trailers', 'chainType'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate.name: ('trailers', 'licensePlate'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country.name: ('trailers', 'licensePlateCountry'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_license_plate_country_id.name: ('trailers', 'licensePlateCountryId'),
     },
 
     SCS_TELEMETRY_CONFIG_job: {
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_id: ('cargo', 'cargoId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo: ('cargo', 'cargo'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_mass: ('cargo', 'mass'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city_id: ('job', 'destinationCityId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city: ('job', 'destinationCity'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city_id: ('job', 'sourceCityId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city: ('job', 'sourceCity'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company_id: ('job', 'destinationCompanyId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company: ('job', 'destinationCompany'),
-        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company_id: ('job', 'sourceCompanyId'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company: ('job', 'sourceCompany'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_income: ('job', 'income'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_delivery_time: ('job', 'deadlineTime', lambda v: GAME_TIME_BASE + timedelta(minutes=v)),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_is_cargo_loaded: ('cargo', 'cargoLoaded'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_job_market: ('job', 'jobMarket'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_special_job: ('job', 'specialTransport'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_unit_count: ('cargo', 'unitCount'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_unit_mass: ('cargo', 'unitMass'),
-        SCS_TELEMETRY_CONFIG_ATTRIBUTE_planned_distance_km: ('job', 'plannedDistance'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_id.name: ('cargo', 'cargoId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo.name: ('cargo', 'cargo'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_mass.name: ('cargo', 'mass'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city_id.name: ('job', 'destinationCityId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city.name: ('job', 'destinationCity'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city_id.name: ('job', 'sourceCityId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city.name: ('job', 'sourceCity'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company_id.name: ('job', 'destinationCompanyId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company.name: ('job', 'destinationCompany'),
+        # SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company_id.name: ('job', 'sourceCompanyId'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company.name: ('job', 'sourceCompany'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_income.name: ('job', 'income'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_delivery_time.name: ('job', 'deadlineTime', lambda v: GAME_TIME_BASE + timedelta(minutes=v)),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_is_cargo_loaded.name: ('cargo', 'cargoLoaded'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_job_market.name: ('job', 'jobMarket'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_special_job.name: ('job', 'specialTransport'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_unit_count.name: ('cargo', 'unitCount'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_unit_mass.name: ('cargo', 'unitMass'),
+        SCS_TELEMETRY_CONFIG_ATTRIBUTE_planned_distance_km.name: ('job', 'plannedDistance'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_job_cancelled: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cancel_penalty: ('jobEvent', 'cancelPenalty'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cancel_penalty.name: ('jobEvent', 'cancelPenalty'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_job_delivered: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_revenue: ('jobEvent', 'revenue'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_earned_xp: ('jobEvent', 'earnedXp'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cargo_damage: ('jobEvent', 'cargoDamage'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_distance_km: ('jobEvent', 'distance'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_delivery_time: ('jobEvent', 'deliveryTime', lambda v: GAME_TIME_BASE + timedelta(minutes=v)),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_auto_park_used: ('jobEvent', 'autoparkUsed'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_auto_load_used: ('jobEvent', 'autoloadUsed'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_revenue.name: ('jobEvent', 'revenue'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_earned_xp.name: ('jobEvent', 'earnedXp'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cargo_damage.name: ('jobEvent', 'cargoDamage'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_distance_km.name: ('jobEvent', 'distance'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_delivery_time.name: ('jobEvent', 'deliveryTime', lambda v: GAME_TIME_BASE + timedelta(minutes=v)),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_auto_park_used.name: ('jobEvent', 'autoparkUsed'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_auto_load_used.name: ('jobEvent', 'autoloadUsed'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_player_fined: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_fine_offence: ('finedEvent', 'fineOffense'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_fine_amount: ('finedEvent', 'fineAmount'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_fine_offence.name: ('finedEvent', 'fineOffense'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_fine_amount.name: ('finedEvent', 'fineAmount'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_player_tollgate_paid: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount: ('tollgateEvent', 'payAmount'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount.name: ('tollgateEvent', 'payAmount'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_player_use_ferry: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount: ('ferryEvent', 'payAmount'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_name: ('ferryEvent', 'sourceName'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_name: ('ferryEvent', 'targetName'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_id: ('ferryEvent', 'sourceId'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_id: ('ferryEvent', 'targetId'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount.name: ('ferryEvent', 'payAmount'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_name.name: ('ferryEvent', 'sourceName'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_name.name: ('ferryEvent', 'targetName'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_id.name: ('ferryEvent', 'sourceId'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_id.name: ('ferryEvent', 'targetId'),
     },
 
     SCS_TELEMETRY_GAMEPLAY_EVENT_player_use_train: {
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount: ('trainEvent', 'payAmount'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_name: ('trainEvent', 'sourceName'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_name: ('trainEvent', 'targetName'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_id: ('trainEvent', 'sourceId'),
-        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_id: ('trainEvent', 'targetId'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_pay_amount.name: ('trainEvent', 'payAmount'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_name.name: ('trainEvent', 'sourceName'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_name.name: ('trainEvent', 'targetName'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_id.name: ('trainEvent', 'sourceId'),
+        SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_id.name: ('trainEvent', 'targetId'),
     },
 
 }
