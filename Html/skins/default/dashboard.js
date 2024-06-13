@@ -52,23 +52,23 @@ Funbit.Ets.Telemetry.Dashboard.prototype.filter = function (data, utils) {
     data.truck.engineRpm = data.truck.engineRpm / 100;
     // calculate wear
     var wearSumPercent = (data.truck.wearEngine +
-                          data.truck.wearTransmission +
-                          data.truck.wearCabin +
-                          data.truck.wearChassis +
-                          data.truck.wearWheels) * 100 / 5;
+                        data.truck.wearTransmission +
+                        data.truck.wearCabin +
+                        data.truck.wearChassis +
+                        data.truck.wearWheels) * 100 / 5;
     wearSumPercent = Math.min(wearSumPercent, 100);
     data.truck.wearSum = Math.round(wearSumPercent) + '%';
-	var connectedTrailers = 0;
-	wearSumPercent = 0;
-	for (var i = 0; i < data.game.maxTrailerCount; i++) {
-		if (data.trailers[i].present) {
-			connectedTrailers++;
-			wearSumPercent += data.trailers[i].wearBody * 100;
-			wearSumPercent += data.trailers[i].wearChassis * 100;
-			wearSumPercent += data.trailers[i].wearWheels * 100;
-		}
-	}
-	if (connectedTrailers > 0) {
+    var connectedTrailers = 0;
+    wearSumPercent = 0;
+    for (var i = 0; i < data.game.maxTrailerCount; i++) {
+        if (data.trailers[i].present) {
+            connectedTrailers++;
+            wearSumPercent += data.trailers[i].wearBody * 100;
+            wearSumPercent += data.trailers[i].wearChassis * 100;
+            wearSumPercent += data.trailers[i].wearWheels * 100;
+        }
+    }
+    if (connectedTrailers > 0) {
         data.job.trailerDamagePercent = Math.floor(wearSumPercent / (connectedTrailers * 3)) + '%';
     } else {
         data.job.trailerDamagePercent = '0%';

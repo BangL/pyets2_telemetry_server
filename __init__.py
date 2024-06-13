@@ -127,16 +127,15 @@ def update_gear_names():
     if shifter_type == SCS_SHIFTER_TYPE_hshifter:
         if fwd_gears == 18:
             fwd_names = ["N", "CL", "CH", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
-        elif fwd_gears == 16:
-            fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
-        elif fwd_gears == 14:
-                fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H", "7L", "7H"] if is_ets2 else \
-                                       ["N", "CL", "CH", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        elif fwd_gears == 14 and not is_ets2:
+            fwd_names = ["N", "CL", "CH", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
         elif fwd_gears == 13:
-            fwd_names = ["N", "L", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
-        elif fwd_gears == 12:
-            fwd_names = ["N", "1L", "1H", "2L", "2H", "3L", "3H", "4L", "4H", "5L", "5H", "6L", "6H"] if is_ets2 else \
-                                   ["N", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+            fwd_names = ["N", "L", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"] # ets2 untested
+        elif fwd_gears == 12 and not is_ets2:
+            fwd_names = ["N", "1", "2", "3", "4", "5L", "5H", "6L", "6H", "7L", "7H", "8L", "8H"]
+        else:
+            for i in range(1, fwd_gears + 1):
+                fwd_names.append(str(math.ceil(i / 2)) + ('L' if (i % 2 == 1) else 'H'))
 
         if rev_gears == 4:
             rev_names = ["N", "R1L", "R1H", "R2L", "R2H"]
@@ -146,14 +145,14 @@ def update_gear_names():
             rev_names = ["N", "RL", "RH"]
 
     if len(fwd_names) == 1:
-        for i in range(1, fwd_gears):
+        for i in range(1, fwd_gears + 1):
             fwd_names.append(str(i))
 
     if len(rev_names) == 1:
         if rev_gears == 1:
             rev_names.append("R")
         elif rev_gears > 1:
-            for i in range(1, rev_gears):
+            for i in range(1, rev_gears + 1):
                 fwd_names.append("R" + str(i))
 
     set_shared_value(['shifter', 'forwardGearNames'], to_int_dict(str, fwd_names))
@@ -187,19 +186,19 @@ def update_shifter_speeds():
 
     if len(fwd_ratios) > 0 and len(rev_ratios) > 0 and fwd_gears > 0 and rev_gears > 0 and tyreCircumference > 0.0 and differentialRatio > 0.0:
 
-        for i in range(1, fwd_gears):
+        for i in range(1, fwd_gears + 1):
             if len(fwd_ratios) > i:
                 fwd_speeds[i] = round(90 * tyreCircumference / differentialRatio * fwd_ratios[i - 1])
                 fwd_rpm[i] = round(60 * abs(speed_mph_) * differentialRatio * fwd_ratios[i - 1] / tyreCircumference)
 
-        for i in range(1, rev_gears):
+        for i in range(1, rev_gears + 1):
             if len(rev_ratios) > i:
                 rev_speeds[i] = round(90 * tyreCircumference / differentialRatio * rev_ratios[i - 1])
                 rev_rpm[i] = round(60 * abs(speed_mph_) * differentialRatio * rev_ratios[i - 1] / tyreCircumference)
 
         gap = 1500
         check = 1300
-        speeds = fwd_rpm if speed_mph_ > 0 else rev_rpm
+        speeds = fwd_rpm if speed_mph_ >= 0 else rev_rpm
         for i in range(1, len(speeds)):
             if speeds[i] < 0:
                 pos = abs(speeds[i] + check)
